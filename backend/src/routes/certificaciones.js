@@ -1,0 +1,71 @@
+const express = require("express");
+const prisma = require("../lib/prisma");
+const { requireAuth } = require("../middleware/auth");
+const upload = require("../lib/upload");
+
+const router = express.Router();
+
+router.get("/", async (req, res) => {
+  const soloActivos = req.query.todos !== "true";
+  const certificaciones = await prisma.certificacion.findMany({
+    where: soloActivos ? { activo: true } : undefined,
+    orderBy: { orden: "asc" },
+  });
+  res.json(certificaciones);
+});
+
+router.post("/", requireAuth, upload.single("imagen"), async (req, res) => {
+  const { nombreEmpleado, titulo, institucion, fecha, descripcion, orden, activo } = req.body;
+  if (!nombreEmpleado || !titulo) {
+    return res.status(400).json({ error: "Faltan campos obligatorios." });
+  }
+  const imagenUrl = req.file ? `/uploads/${req.file.filename}` : req.body.imagenUrl || null;
+
+  const certificacion = await prisma.certificacion.create({
+    data: {
+      nombreEmpleado,
+      titulo,
+      institucion: institucion || null,
+      fecha: fecha ? new Date(fecha) : null,
+      descripcion: descripcion || null,
+      imagenUrl,
+      orden: orden ? Number(orden) : 0,
+      activo: activo === undefined ? true : activo === "true" || activo === true,
+    },
+  });
+  res.status(201).json(certificacion);
+});
+
+router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
+  const id = Number(req.params.id);
+  const { nombreEmpleado, titulo, institucion, fecha, descripcion, orden, activo, imagenUrl } = req.body;
+
+  const data = {};
+  if (nombreEmpleado !== undefined) data.nombreEmpleado = nombreEmpleado;
+  if (titulo !== undefined) data.titulo = titulo;
+  if (institucion !== undefined) data.institucion = institucion;
+  if (fecha !== undefined) data.fecha = fecha ? new Date(fecha) : null;
+  if (descripcion !== undefined) data.descripcion = descripcion;
+  if (orden !== undefined) data.orden = Number(orden);
+  if (activo !== undefined) data.activo = activo === "true" || activo === true;
+  if (req.file) data.imagenUrl = `/uploads/${req.file.filename}`;
+  else if (imagenUrl !== undefined) data.imagenUrl = imagenUrl;
+
+  try {
+    const certificacion = await prisma.certificacion.update({ where: { id }, data });
+    res.json(certificacion);
+  } catch (err) {
+    res.status(404).json({ error: "Certificación no encontrada" });
+  }
+});
+
+router.delete("/:id", requireAuth, async (req, res) => {
+  try {
+    await prisma.certificacion.delete({ where: { id: Number(req.params.id) } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(404).json({ error: "Certificación no encontrada" });
+  }
+});
+
+module.exports = router;

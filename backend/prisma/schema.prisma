@@ -1,0 +1,108 @@
+// Prisma schema de Pizarro Carwash
+// Pensado para MySQL. Para desarrollo local podes usar MySQL local, Docker
+// o un servicio como PlanetScale/Railway. Configura DATABASE_URL en .env
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum TipoVehiculo {
+  AUTO
+  MOTO
+  AMBOS
+}
+
+enum Rol {
+  ADMIN
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  email     String   @unique
+  password  String
+  rol       Rol      @default(ADMIN)
+  createdAt DateTime @default(now())
+}
+
+model Servicio {
+  id           Int          @id @default(autoincrement())
+  nombre       String
+  descripcion  String       @db.Text
+  tipoVehiculo TipoVehiculo @default(AMBOS)
+  precioDesde  Decimal?     @db.Decimal(10, 2)
+  imagenUrl    String?
+  icono        String?      // nombre de icono (lucide-react) o emoji
+  incluye      String?      @db.Text
+  duracion     String?
+  orden        Int          @default(0)
+  masVendido   Boolean      @default(false) // se muestra primero en el inicio
+  activo       Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  resenas      Resena[]
+}
+
+model Resena {
+  id             Int      @id @default(autoincrement())
+  servicio       Servicio @relation(fields: [servicioId], references: [id], onDelete: Cascade)
+  servicioId     Int
+  nombreCliente  String
+  calificacion   Int      // 1 a 5 estrellas
+  comentario     String   @db.Text
+  aprobada       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  @@index([servicioId])
+}
+
+model Producto {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  descripcion String   @db.Text
+  precio      Decimal  @db.Decimal(10, 2)
+  imagenUrl   String?
+  categoria   String   // ej: "Auto", "Moto", "Ambos", "Accesorios"
+  destacado   Boolean  @default(false)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Marca {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  logoUrl   String?
+  orden     Int      @default(0)
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Resultado {
+  id            Int      @id @default(autoincrement())
+  titulo        String
+  descripcion   String?  @db.Text
+  imagenAntes   String
+  imagenDespues String
+  orden         Int      @default(0)
+  activo        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+model Certificacion {
+  id             Int      @id @default(autoincrement())
+  nombreEmpleado String
+  titulo         String
+  institucion    String?
+  fecha          DateTime?
+  imagenUrl      String?
+  descripcion    String?  @db.Text
+  orden          Int      @default(0)
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+}

@@ -1,0 +1,86 @@
+const express = require("express");
+const prisma = require("../lib/prisma");
+const { requireAuth } = require("../middleware/auth");
+const upload = require("../lib/upload");
+
+const router = express.Router();
+
+// GET /api/productos (público) - lista productos activos
+router.get("/", async (req, res) => {
+  const soloActivos = req.query.todos !== "true";
+  const productos = await prisma.producto.findMany({
+    where: soloActivos ? { activo: true } : undefined,
+    orderBy: [{ destacado: "desc" }, { createdAt: "desc" }],
+  });
+  res.json(productos);
+});
+
+// GET /api/productos/:id
+router.get("/:id", async (req, res) => {
+  const producto = await prisma.producto.findUnique({
+    where: { id: Number(req.params.id) },
+  });
+  if (!producto) return res.status(404).json({ error: "Producto no encontrado" });
+  res.json(producto);
+});
+
+// POST /api/productos (protegido) - crea producto, admite imagen
+router.post("/", requireAuth, upload.single("imagen"), async (req, res) => {
+  const { nombre, descripcion, precio, categoria, destacado, activo } = req.body;
+
+  if (!nombre || !descripcion || !precio || !categoria) {
+    return res.status(400).json({ error: "Faltan campos obligatorios." });
+  }
+
+  const imagenUrl = req.file ? `/uploads/${req.file.filename}` : req.body.imagenUrl || null;
+
+  const producto = await prisma.producto.create({
+    data: {
+      nombre,
+      descripcion,
+      precio: Number(precio),
+      categoria,
+      imagenUrl,
+      destacado: destacado === "true" || destacado === true,
+      activo: activo === undefined ? true : activo === "true" || activo === true,
+    },
+  });
+
+  res.status(201).json(producto);
+});
+
+// PUT /api/productos/:id (protegido)
+router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
+  const id = Number(req.params.id);
+  const { nombre, descripcion, precio, categoria, destacado, activo, imagenUrl } = req.body;
+
+  const data = {};
+  if (nombre !== undefined) data.nombre = nombre;
+  if (descripcion !== undefined) data.descripcion = descripcion;
+  if (precio !== undefined) data.precio = Number(precio);
+  if (categoria !== undefined) data.categoria = categoria;
+  if (destacado !== undefined) data.destacado = destacado === "true" || destacado === true;
+  if (activo !== undefined) data.activo = activo === "true" || activo === true;
+  if (req.file) data.imagenUrl = `/uploads/${req.file.filename}`;
+  else if (imagenUrl !== undefined) data.imagenUrl = imagenUrl;
+
+  try {
+    const producto = await prisma.producto.update({ where: { id }, data });
+    res.json(producto);
+  } catch (err) {
+    res.status(404).json({ error: "Producto no encontrado" });
+  }
+});
+
+// DELETE /api/productos/:id (protegido)
+router.delete("/:id", requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    await prisma.producto.delete({ where: { id } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(404).json({ error: "Producto no encontrado" });
+  }
+});
+
+module.exports = router;

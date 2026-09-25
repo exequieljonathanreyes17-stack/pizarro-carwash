@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-carbon-950 text-chrome-100 font-body antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer components {
+  .text-chrome {
+    @apply bg-chrome-text bg-clip-text text-transparent;
+    -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.15);
+  }
+
+  .text-electric {
+    @apply bg-electric-text bg-clip-text text-transparent;
+  }
+
+  .section-title {
+    @apply font-display text-3xl md:text-5xl font-bold text-chrome;
+  }
+
+  .section-eyebrow {
+    @apply font-display text-electric-400 tracking-[0.35em] text-xs md:text-sm font-semibold;
+  }
+
+  .glass-card {
+    @apply bg-carbon-800/60 border border-electric-500/20 backdrop-blur-sm;
+  }
+
+  .neon-border {
+    @apply border border-electric-500/40 shadow-neon;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-gradient-to-b from-electric-400 to-electric-600
+      px-6 py-3 font-display font-semibold text-white shadow-neon transition-transform duration-200
+      hover:scale-[1.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric-400;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-chrome-300/40 bg-carbon-800/70
+      px-6 py-3 font-display font-semibold text-chrome-100 transition-colors duration-200
+      hover:border-electric-400 hover:text-electric-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric-400;
+  }
+
+  .input-field {
+    @apply w-full rounded-md border border-chrome-400/30 bg-carbon-900 px-4 py-2.5 text-chrome-100
+      placeholder:text-chrome-400/60 focus:border-electric-400 focus:outline-none focus:ring-1 focus:ring-electric-400;
+  }
+}
