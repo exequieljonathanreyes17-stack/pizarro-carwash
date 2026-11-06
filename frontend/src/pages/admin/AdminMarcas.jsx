@@ -3,6 +3,7 @@ import { Plus, Trash2, X, Award } from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
 import { SkeletonCards } from "../../components/admin/AdminSkeletons.jsx";
 import Paginacion from "../../components/admin/Paginacion.jsx";
+import ModalConfirmar from "../../components/admin/ModalConfirmar.jsx";
 
 const ITEMS_POR_PAGINA = 6;
 
@@ -15,6 +16,8 @@ export default function AdminMarcas() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [marcaAEliminar, setMarcaAEliminar] = useState(null);
+  const [eliminando, setEliminando] = useState(false);
 
   const totalPaginas = Math.ceil(marcas.length / ITEMS_POR_PAGINA) || 1;
   const paginaValida = Math.min(Math.max(1, pagina), totalPaginas);
@@ -35,10 +38,18 @@ export default function AdminMarcas() {
   }
   useEffect(cargar, []);
 
-  async function eliminar(id) {
-    if (!confirm("¿Eliminar esta marca?")) return;
-    await api.del(`/marcas/${id}`, { auth: true });
-    cargar();
+  async function confirmarEliminar() {
+    if (!marcaAEliminar) return;
+    setEliminando(true);
+    try {
+      await api.del(`/marcas/${marcaAEliminar.id}`, { auth: true });
+      cargar();
+      setMarcaAEliminar(null);
+    } catch (err) {
+      setError(err.message || "Error al eliminar marca");
+    } finally {
+      setEliminando(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -87,7 +98,7 @@ export default function AdminMarcas() {
                     <Award className="text-chrome-400" size={28} />
                   )}
                   <span className="text-xs text-chrome-300">{m.nombre}</span>
-                  <button onClick={() => eliminar(m.id)} className="text-chrome-400 hover:text-red-400">
+                  <button onClick={() => setMarcaAEliminar(m)} className="text-chrome-400 hover:text-red-400">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -132,6 +143,17 @@ export default function AdminMarcas() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmación para eliminar marca */}
+      <ModalConfirmar
+        abierto={!!marcaAEliminar}
+        onCerrar={() => setMarcaAEliminar(null)}
+        onConfirmar={confirmarEliminar}
+        titulo="¿Eliminar marca?"
+        mensaje="¿Estás seguro de que deseas eliminar esta marca de productos?"
+        nombreItem={marcaAEliminar?.nombre}
+        cargando={eliminando}
+      />
     </div>
   );
 }

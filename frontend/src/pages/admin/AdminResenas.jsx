@@ -4,6 +4,7 @@ import { api, cache } from "../../lib/api";
 import Estrellas from "../../components/Estrellas.jsx";
 import { SkeletonResenas } from "../../components/admin/AdminSkeletons.jsx";
 import Paginacion from "../../components/admin/Paginacion.jsx";
+import ModalConfirmar from "../../components/admin/ModalConfirmar.jsx";
 
 const ITEMS_POR_PAGINA = 6;
 
@@ -11,6 +12,8 @@ export default function AdminResenas() {
   const [resenas, setResenas] = useState(() => cache.get("/resenas") || []);
   const [cargando, setCargando] = useState(() => !cache.get("/resenas"));
   const [pagina, setPagina] = useState(1);
+  const [resenaAEliminar, setResenaAEliminar] = useState(null);
+  const [eliminando, setEliminando] = useState(false);
 
   const totalPaginas = Math.ceil(resenas.length / ITEMS_POR_PAGINA) || 1;
   const paginaValida = Math.min(Math.max(1, pagina), totalPaginas);
@@ -31,10 +34,18 @@ export default function AdminResenas() {
   }
   useEffect(cargar, []);
 
-  async function eliminar(id) {
-    if (!confirm("¿Eliminar esta reseña?")) return;
-    await api.del(`/resenas/${id}`, { auth: true });
-    cargar();
+  async function confirmarEliminar() {
+    if (!resenaAEliminar) return;
+    setEliminando(true);
+    try {
+      await api.del(`/resenas/${resenaAEliminar.id}`, { auth: true });
+      cargar();
+      setResenaAEliminar(null);
+    } catch (err) {
+      alert(err.message || "Error al eliminar reseña");
+    } finally {
+      setEliminando(false);
+    }
   }
 
   return (
@@ -65,7 +76,7 @@ export default function AdminResenas() {
                       {new Date(r.createdAt).toLocaleString("es-AR")}
                     </p>
                   </div>
-                  <button onClick={() => eliminar(r.id)} className="text-chrome-300 hover:text-red-400">
+                  <button onClick={() => setResenaAEliminar(r)} className="text-chrome-300 hover:text-red-400">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -83,6 +94,17 @@ export default function AdminResenas() {
           />
         </>
       )}
+
+      {/* Modal de confirmación para eliminar reseña */}
+      <ModalConfirmar
+        abierto={!!resenaAEliminar}
+        onCerrar={() => setResenaAEliminar(null)}
+        onConfirmar={confirmarEliminar}
+        titulo="¿Eliminar reseña?"
+        mensaje="¿Estás seguro de que deseas eliminar esta reseña de cliente? Se borrará permanentemente."
+        nombreItem={resenaAEliminar ? `${resenaAEliminar.nombreCliente} (${resenaAEliminar.calificacion}★)` : ""}
+        cargando={eliminando}
+      />
     </div>
   );
 }

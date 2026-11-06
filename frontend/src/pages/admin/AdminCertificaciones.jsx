@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2, X, Award } from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
 import { SkeletonCards } from "../../components/admin/AdminSkeletons.jsx";
+import ModalConfirmar from "../../components/admin/ModalConfirmar.jsx";
 
 const VACIO = { nombreEmpleado: "", titulo: "", institucion: "", descripcion: "" };
 
@@ -13,6 +14,8 @@ export default function AdminCertificaciones() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [certificacionAEliminar, setCertificacionAEliminar] = useState(null);
+  const [eliminando, setEliminando] = useState(false);
 
   function cargar() {
     if (!cache.get("/certificaciones")) setCargando(true);
@@ -26,10 +29,18 @@ export default function AdminCertificaciones() {
   }
   useEffect(cargar, []);
 
-  async function eliminar(id) {
-    if (!confirm("¿Eliminar esta certificación?")) return;
-    await api.del(`/certificaciones/${id}`, { auth: true });
-    cargar();
+  async function confirmarEliminar() {
+    if (!certificacionAEliminar) return;
+    setEliminando(true);
+    try {
+      await api.del(`/certificaciones/${certificacionAEliminar.id}`, { auth: true });
+      cargar();
+      setCertificacionAEliminar(null);
+    } catch (err) {
+      setError(err.message || "Error al eliminar certificación");
+    } finally {
+      setEliminando(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -85,7 +96,7 @@ export default function AdminCertificaciones() {
                   <p className="text-xs text-chrome-400">{c.nombreEmpleado}</p>
                   {c.institucion && <p className="text-xs text-chrome-400">{c.institucion}</p>}
                 </div>
-                <button onClick={() => eliminar(c.id)} className="text-chrome-300 hover:text-red-400">
+                <button onClick={() => setCertificacionAEliminar(c)} className="text-chrome-300 hover:text-red-400">
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -171,6 +182,17 @@ export default function AdminCertificaciones() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmación para eliminar certificación */}
+      <ModalConfirmar
+        abierto={!!certificacionAEliminar}
+        onCerrar={() => setCertificacionAEliminar(null)}
+        onConfirmar={confirmarEliminar}
+        titulo="¿Eliminar certificación?"
+        mensaje="¿Estás seguro de que deseas eliminar este certificado? Ya no aparecerá en la web pública."
+        nombreItem={certificacionAEliminar?.titulo}
+        cargando={eliminando}
+      />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Clock, Sparkles, Check, Wrench } from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
 import { SkeletonServicios } from "../../components/admin/AdminSkeletons.jsx";
 import Paginacion from "../../components/admin/Paginacion.jsx";
+import ModalConfirmar from "../../components/admin/ModalConfirmar.jsx";
 
 const ITEMS_POR_PAGINA = 6;
 
@@ -31,6 +32,8 @@ export default function AdminServicios() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [servicioAEliminar, setServicioAEliminar] = useState(null);
+  const [eliminando, setEliminando] = useState(false);
 
   const totalPaginas = Math.ceil(servicios.length / ITEMS_POR_PAGINA) || 1;
   const paginaValida = Math.min(Math.max(1, pagina), totalPaginas);
@@ -76,10 +79,18 @@ export default function AdminServicios() {
     setMostrarForm(true);
   }
 
-  async function eliminar(id) {
-    if (!confirm("¿Eliminar este servicio?")) return;
-    await api.del(`/servicios/${id}`, { auth: true });
-    cargar();
+  async function confirmarEliminar() {
+    if (!servicioAEliminar) return;
+    setEliminando(true);
+    try {
+      await api.del(`/servicios/${servicioAEliminar.id}`, { auth: true });
+      cargar();
+      setServicioAEliminar(null);
+    } catch (err) {
+      setError(err.message || "Error al eliminar servicio");
+    } finally {
+      setEliminando(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -129,34 +140,118 @@ export default function AdminServicios() {
           <SkeletonServicios />
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               {serviciosPaginados.map((s) => (
-                <div key={s.id} className="glass-card rounded-xl p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      {s.masVendido && (
-                        <span className="mb-1 inline-block rounded-full bg-electric-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-electric-400">
-                          Más vendido
-                        </span>
-                      )}
-                      <h3 className="font-display font-bold text-chrome-100">{s.nombre}</h3>
-                      <p className="mt-1 text-xs text-chrome-400">{s.tipoVehiculo}</p>
+                <div
+                  key={s.id}
+                  className="glass-card group flex flex-col justify-between rounded-2xl border border-carbon-800 bg-carbon-900/40 p-5 transition-all duration-300 hover:border-electric-500/40 hover:bg-carbon-900/80 hover:shadow-[0_0_25px_rgba(34,211,238,0.08)]"
+                >
+                  <div>
+                    <div className="flex gap-4">
+                      {/* Miniatura visual */}
+                      <div className="relative h-20 w-20 flex-none overflow-hidden rounded-xl border border-carbon-800 bg-carbon-950/80">
+                        {s.imagenUrl ? (
+                          <img
+                            src={uploadUrl(s.imagenUrl)}
+                            alt={s.nombre}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-electric-400/80">
+                            <Wrench size={26} />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info del servicio */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                          {s.masVendido && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                              <Sparkles size={10} />
+                              Más vendido
+                            </span>
+                          )}
+                          <span className="inline-flex items-center rounded-full border border-electric-500/20 bg-electric-500/10 px-2 py-0.5 text-[10px] font-semibold text-electric-300">
+                            {s.tipoVehiculo}
+                          </span>
+                          {s.duracion && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-carbon-700 bg-carbon-800/80 px-2 py-0.5 text-[10px] text-chrome-300">
+                              <Clock size={10} className="text-electric-400" />
+                              {s.duracion}
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className="font-display text-base font-bold text-chrome-100 truncate group-hover:text-electric-300 transition-colors">
+                          {s.nombre}
+                        </h3>
+
+                        <p className="mt-1 line-clamp-2 text-xs text-chrome-300 leading-relaxed">
+                          {s.descripcion}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => editar(s)} className="text-chrome-300 hover:text-electric-400">
-                        <Pencil size={16} />
+
+                    {/* Qué incluye (si tiene ítems) */}
+                    {s.incluye && (
+                      <div className="mt-3.5 border-t border-carbon-800/60 pt-2.5">
+                        <div className="flex flex-wrap gap-1.5">
+                          {s.incluye
+                            .split("\n")
+                            .filter((item) => item.trim())
+                            .slice(0, 3)
+                            .map((item, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center gap-1 rounded-md bg-carbon-950/70 border border-carbon-800 px-2 py-0.5 text-[11px] text-chrome-300"
+                              >
+                                <Check size={10} className="text-electric-400 shrink-0" />
+                                <span className="truncate max-w-[130px]">{item.trim()}</span>
+                              </span>
+                            ))}
+                          {s.incluye.split("\n").filter((i) => i.trim()).length > 3 && (
+                            <span className="rounded-md bg-carbon-950/70 border border-carbon-800 px-1.5 py-0.5 text-[10px] text-chrome-400">
+                              +{s.incluye.split("\n").filter((i) => i.trim()).length - 3} más
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Pie de la tarjeta: Precio y Acciones */}
+                  <div className="mt-4 flex items-center justify-between border-t border-carbon-800/70 pt-3">
+                    <div>
+                      {s.precioDesde ? (
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-chrome-400 tracking-wider">Desde</span>
+                          <p className="font-display text-lg font-bold text-electric-400">
+                            ${Number(s.precioDesde).toLocaleString("es-AR")}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-chrome-400 italic">Consultar precio</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => editar(s)}
+                        title="Editar servicio"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-carbon-700 bg-carbon-800/60 text-chrome-300 transition-all hover:border-electric-500/50 hover:bg-electric-500/10 hover:text-electric-400 active:scale-95"
+                      >
+                        <Pencil size={14} />
                       </button>
-                      <button onClick={() => eliminar(s.id)} className="text-chrome-300 hover:text-red-400">
-                        <Trash2 size={16} />
+                      <button
+                        onClick={() => setServicioAEliminar(s)}
+                        title="Eliminar servicio"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-carbon-700 bg-carbon-800/60 text-chrome-300 transition-all hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400 active:scale-95"
+                      >
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
-                  <p className="mt-2 text-sm text-chrome-300">{s.descripcion}</p>
-                  {s.precioDesde && (
-                    <p className="mt-2 font-display text-electric-400">
-                      Desde ${Number(s.precioDesde).toLocaleString("es-AR")}
-                    </p>
-                  )}
                 </div>
               ))}
               {servicios.length === 0 && (
@@ -314,6 +409,17 @@ export default function AdminServicios() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmación para eliminar */}
+      <ModalConfirmar
+        abierto={!!servicioAEliminar}
+        onCerrar={() => setServicioAEliminar(null)}
+        onConfirmar={confirmarEliminar}
+        titulo="¿Eliminar servicio?"
+        mensaje="¿Estás seguro de que deseas eliminar este servicio? Ya no aparecerá en la web pública ni en el panel."
+        nombreItem={servicioAEliminar?.nombre}
+        cargando={eliminando}
+      />
     </div>
   );
 }

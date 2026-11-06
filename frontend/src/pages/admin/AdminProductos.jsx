@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
 import { SkeletonProductos } from "../../components/admin/AdminSkeletons.jsx";
 import Paginacion from "../../components/admin/Paginacion.jsx";
+import ModalConfirmar from "../../components/admin/ModalConfirmar.jsx";
 
 const ITEMS_POR_PAGINA = 6;
 
@@ -18,6 +19,8 @@ export default function AdminProductos() {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [productoAEliminar, setProductoAEliminar] = useState(null);
+  const [eliminando, setEliminando] = useState(false);
 
   const totalPaginas = Math.ceil(productos.length / ITEMS_POR_PAGINA) || 1;
   const paginaValida = Math.min(Math.max(1, pagina), totalPaginas);
@@ -60,10 +63,18 @@ export default function AdminProductos() {
     setMostrarForm(true);
   }
 
-  async function eliminarProducto(id) {
-    if (!confirm("¿Eliminar este producto?")) return;
-    await api.del(`/productos/${id}`, { auth: true });
-    cargar();
+  async function confirmarEliminarProducto() {
+    if (!productoAEliminar) return;
+    setEliminando(true);
+    try {
+      await api.del(`/productos/${productoAEliminar.id}`, { auth: true });
+      cargar();
+      setProductoAEliminar(null);
+    } catch (err) {
+      setError(err.message || "Error al eliminar producto");
+    } finally {
+      setEliminando(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -143,7 +154,7 @@ export default function AdminProductos() {
                     <button onClick={() => editarProducto(p)} className="mr-3 text-chrome-300 hover:text-electric-400">
                       <Pencil size={16} />
                     </button>
-                    <button onClick={() => eliminarProducto(p.id)} className="text-chrome-300 hover:text-red-400">
+                    <button onClick={() => setProductoAEliminar(p)} className="text-chrome-300 hover:text-red-400">
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -265,6 +276,17 @@ export default function AdminProductos() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmación para eliminar producto */}
+      <ModalConfirmar
+        abierto={!!productoAEliminar}
+        onCerrar={() => setProductoAEliminar(null)}
+        onConfirmar={confirmarEliminarProducto}
+        titulo="¿Eliminar producto?"
+        mensaje="¿Estás seguro de que deseas eliminar este producto? Se borrará de la lista."
+        nombreItem={productoAEliminar?.nombre}
+        cargando={eliminando}
+      />
     </div>
   );
 }
