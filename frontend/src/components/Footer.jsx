@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MapPin, Phone, Instagram, Clock, Car, Lock } from "lucide-react";
+import { MapPin, Phone, Instagram, Clock, Car } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -63,17 +63,10 @@ export default function Footer() {
 
         </div>
 
-        <div className="mt-16 flex flex-col sm:flex-row items-center justify-between border-t border-electric-500/10 pt-8 text-center text-xs text-chrome-400 gap-4">
-          <p>
+        <div className="mt-16 flex flex-col items-center justify-center border-t border-electric-500/10 pt-8 text-center">
+          <p className="text-xs text-chrome-400">
             © {new Date().getFullYear()} Pizarro Carwash. Todos los derechos reservados.
           </p>
-          <Link
-            to="/admin"
-            className="flex items-center gap-1.5 text-chrome-400 hover:text-electric-400 transition-colors"
-          >
-            <Lock size={13} />
-            <span>Acceso Administrador</span>
-          </Link>
         </div>
       </div>
     </footer>
