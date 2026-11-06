@@ -32,11 +32,38 @@ async function request(path, { method = "GET", body, isForm = false, auth = fals
   return data;
 }
 
+const memCache = new Map();
+
+export const cache = {
+  get: (key) => memCache.get(key),
+  set: (key, val) => memCache.set(key, val),
+  clear: (prefix) => {
+    if (!prefix) memCache.clear();
+    else {
+      for (const k of memCache.keys()) {
+        if (k.startsWith(prefix)) memCache.delete(k);
+      }
+    }
+  },
+};
+
 export const api = {
   get: (path, auth = false) => request(path, { method: "GET", auth }),
-  post: (path, body, opts = {}) => request(path, { method: "POST", body, ...opts }),
-  put: (path, body, opts = {}) => request(path, { method: "PUT", body, ...opts }),
-  del: (path, opts = {}) => request(path, { method: "DELETE", ...opts }),
+  post: async (path, body, opts = {}) => {
+    const res = await request(path, { method: "POST", body, ...opts });
+    cache.clear();
+    return res;
+  },
+  put: async (path, body, opts = {}) => {
+    const res = await request(path, { method: "PUT", body, ...opts });
+    cache.clear();
+    return res;
+  },
+  del: async (path, opts = {}) => {
+    const res = await request(path, { method: "DELETE", ...opts });
+    cache.clear();
+    return res;
+  },
 };
 
 export function uploadUrl(pathOrUrl) {

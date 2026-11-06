@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
-import { api, uploadUrl } from "../../lib/api";
+import { api, cache, uploadUrl } from "../../lib/api";
+import { SkeletonProductos } from "../../components/admin/AdminSkeletons.jsx";
 
 const VACIO = { nombre: "", descripcion: "", precio: "", categoria: "Auto", destacado: false, activo: true };
 
 export default function AdminProductos() {
-  const [productos, setProductos] = useState([]);
+  const [productos, setProductos] = useState(() => cache.get("/productos") || []);
+  const [cargando, setCargando] = useState(() => !cache.get("/productos"));
   const [form, setForm] = useState(VACIO);
   const [imagen, setImagen] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
@@ -14,7 +16,14 @@ export default function AdminProductos() {
   const [guardando, setGuardando] = useState(false);
 
   function cargar() {
-    api.get("/productos?todos=true").then(setProductos).catch(() => {});
+    if (!cache.get("/productos")) setCargando(true);
+    api.get("/productos?todos=true")
+      .then((data) => {
+        setProductos(data);
+        cache.set("/productos", data);
+      })
+      .catch(() => {})
+      .finally(() => setCargando(false));
   }
 
   useEffect(cargar, []);
@@ -95,45 +104,49 @@ export default function AdminProductos() {
               <th className="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody>
-            {productos.map((p) => (
-              <tr key={p.id} className="border-t border-electric-500/10">
-                <td className="flex items-center gap-3 px-4 py-3">
-                  {p.imagenUrl && (
-                    <img src={uploadUrl(p.imagenUrl)} alt={p.nombre} className="h-10 w-10 rounded object-cover" />
-                  )}
-                  <span className="font-semibold text-chrome-100">{p.nombre}</span>
-                  {p.destacado && (
-                    <span className="rounded-full bg-electric-500/15 px-2 py-0.5 text-[10px] text-electric-400">
-                      Destacado
+          {cargando && productos.length === 0 ? (
+            <SkeletonProductos />
+          ) : (
+            <tbody>
+              {productos.map((p) => (
+                <tr key={p.id} className="border-t border-electric-500/10">
+                  <td className="flex items-center gap-3 px-4 py-3">
+                    {p.imagenUrl && (
+                      <img src={uploadUrl(p.imagenUrl)} alt={p.nombre} className="h-10 w-10 rounded object-cover" />
+                    )}
+                    <span className="font-semibold text-chrome-100">{p.nombre}</span>
+                    {p.destacado && (
+                      <span className="rounded-full bg-electric-500/15 px-2 py-0.5 text-[10px] text-electric-400">
+                        Destacado
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-chrome-300">{p.categoria}</td>
+                  <td className="px-4 py-3 text-chrome-300">${Number(p.precio).toLocaleString("es-AR")}</td>
+                  <td className="px-4 py-3">
+                    <span className={`text-xs font-semibold ${p.activo ? "text-electric-400" : "text-chrome-400"}`}>
+                      {p.activo ? "Activo" : "Oculto"}
                     </span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-chrome-300">{p.categoria}</td>
-                <td className="px-4 py-3 text-chrome-300">${Number(p.precio).toLocaleString("es-AR")}</td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs font-semibold ${p.activo ? "text-electric-400" : "text-chrome-400"}`}>
-                    {p.activo ? "Activo" : "Oculto"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button onClick={() => editarProducto(p)} className="mr-3 text-chrome-300 hover:text-electric-400">
-                    <Pencil size={16} />
-                  </button>
-                  <button onClick={() => eliminarProducto(p.id)} className="text-chrome-300 hover:text-red-400">
-                    <Trash2 size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {productos.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-chrome-400">
-                  Todavía no cargaste productos.
-                </td>
-              </tr>
-            )}
-          </tbody>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button onClick={() => editarProducto(p)} className="mr-3 text-chrome-300 hover:text-electric-400">
+                      <Pencil size={16} />
+                    </button>
+                    <button onClick={() => eliminarProducto(p.id)} className="text-chrome-300 hover:text-red-400">
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {productos.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-chrome-400">
+                    Todavía no cargaste productos.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          )}
         </table>
       </div>
 

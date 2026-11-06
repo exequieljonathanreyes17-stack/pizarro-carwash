@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Package, Wrench, Award, Star } from "lucide-react";
-import { api } from "../../lib/api";
+import { api, cache } from "../../lib/api";
+import { SkeletonStats } from "../../components/admin/AdminSkeletons.jsx";
 
 export default function Panel() {
-  const [stats, setStats] = useState({ productos: 0, servicios: 0, certificaciones: 0, resenas: 0 });
+  const [stats, setStats] = useState(() => cache.get("/panel_stats") || null);
+  const [cargando, setCargando] = useState(() => !cache.get("/panel_stats"));
 
   useEffect(() => {
     Promise.all([
@@ -12,21 +14,25 @@ export default function Panel() {
       api.get("/certificaciones?todos=true").catch(() => []),
       api.get("/resenas", true).catch(() => []),
     ]).then(([productos, servicios, certificaciones, resenas]) => {
-      setStats({
+      const data = {
         productos: productos.length,
         servicios: servicios.length,
         certificaciones: certificaciones.length,
         resenas: resenas.length,
-      });
+      };
+      setStats(data);
+      cache.set("/panel_stats", data);
+    }).finally(() => {
+      setCargando(false);
     });
   }, []);
 
-  const tarjetas = [
+  const tarjetas = stats ? [
     { label: "Productos", valor: stats.productos, icon: Package },
     { label: "Servicios", valor: stats.servicios, icon: Wrench },
     { label: "Certificaciones", valor: stats.certificaciones, icon: Award },
     { label: "Reseñas recibidas", valor: stats.resenas, icon: Star },
-  ];
+  ] : [];
 
   return (
     <div>
@@ -35,15 +41,19 @@ export default function Panel() {
         Administrá los productos, servicios y certificaciones que se muestran en la web pública.
       </p>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {tarjetas.map(({ label, valor, icon: Icon }) => (
-          <div key={label} className="glass-card rounded-xl p-5">
-            <Icon className="text-electric-400" size={22} />
-            <p className="mt-3 font-display text-3xl font-bold text-chrome-100">{valor}</p>
-            <p className="mt-1 text-sm text-chrome-400">{label}</p>
-          </div>
-        ))}
-      </div>
+      {cargando && !stats ? (
+        <SkeletonStats />
+      ) : (
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {tarjetas.map(({ label, valor, icon: Icon }) => (
+            <div key={label} className="glass-card rounded-xl p-5">
+              <Icon className="text-electric-400" size={22} />
+              <p className="mt-3 font-display text-3xl font-bold text-chrome-100">{valor}</p>
+              <p className="mt-1 text-sm text-chrome-400">{label}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

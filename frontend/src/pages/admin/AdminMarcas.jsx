@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, X, Award } from "lucide-react";
-import { api, uploadUrl } from "../../lib/api";
+import { api, cache, uploadUrl } from "../../lib/api";
+import { SkeletonCards } from "../../components/admin/AdminSkeletons.jsx";
 
 export default function AdminMarcas() {
-  const [marcas, setMarcas] = useState([]);
+  const [marcas, setMarcas] = useState(() => cache.get("/marcas") || []);
+  const [cargando, setCargando] = useState(() => !cache.get("/marcas"));
   const [nombre, setNombre] = useState("");
   const [logo, setLogo] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -11,7 +13,14 @@ export default function AdminMarcas() {
   const [guardando, setGuardando] = useState(false);
 
   function cargar() {
-    api.get("/marcas?todos=true").then(setMarcas).catch(() => {});
+    if (!cache.get("/marcas")) setCargando(true);
+    api.get("/marcas?todos=true")
+      .then((data) => {
+        setMarcas(data);
+        cache.set("/marcas", data);
+      })
+      .catch(() => {})
+      .finally(() => setCargando(false));
   }
   useEffect(cargar, []);
 
@@ -53,21 +62,27 @@ export default function AdminMarcas() {
         Se muestran en el inicio, debajo de la sección de productos.
       </p>
 
-      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {marcas.map((m) => (
-          <div key={m.id} className="glass-card flex flex-col items-center gap-2 rounded-xl p-4">
-            {m.logoUrl ? (
-              <img src={uploadUrl(m.logoUrl)} alt={m.nombre} className="h-12 w-full object-contain" />
-            ) : (
-              <Award className="text-chrome-400" size={28} />
-            )}
-            <span className="text-xs text-chrome-300">{m.nombre}</span>
-            <button onClick={() => eliminar(m.id)} className="text-chrome-400 hover:text-red-400">
-              <Trash2 size={14} />
-            </button>
+      <div className="mt-6">
+        {cargando && marcas.length === 0 ? (
+          <SkeletonCards />
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {marcas.map((m) => (
+              <div key={m.id} className="glass-card flex flex-col items-center gap-2 rounded-xl p-4">
+                {m.logoUrl ? (
+                  <img src={uploadUrl(m.logoUrl)} alt={m.nombre} className="h-12 w-full object-contain" />
+                ) : (
+                  <Award className="text-chrome-400" size={28} />
+                )}
+                <span className="text-xs text-chrome-300">{m.nombre}</span>
+                <button onClick={() => eliminar(m.id)} className="text-chrome-400 hover:text-red-400">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+            {marcas.length === 0 && <p className="text-chrome-400">Todavía no cargaste marcas.</p>}
           </div>
-        ))}
-        {marcas.length === 0 && <p className="text-chrome-400">Todavía no cargaste marcas.</p>}
+        )}
       </div>
 
       {mostrarForm && (

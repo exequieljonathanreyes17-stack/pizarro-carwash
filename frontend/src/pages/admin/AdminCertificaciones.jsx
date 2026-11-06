@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, X, Award } from "lucide-react";
-import { api, uploadUrl } from "../../lib/api";
+import { api, cache, uploadUrl } from "../../lib/api";
+import { SkeletonCards } from "../../components/admin/AdminSkeletons.jsx";
 
 const VACIO = { nombreEmpleado: "", titulo: "", institucion: "", descripcion: "" };
 
 export default function AdminCertificaciones() {
-  const [certificaciones, setCertificaciones] = useState([]);
+  const [certificaciones, setCertificaciones] = useState(() => cache.get("/certificaciones") || []);
+  const [cargando, setCargando] = useState(() => !cache.get("/certificaciones"));
   const [form, setForm] = useState(VACIO);
   const [imagen, setImagen] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -13,7 +15,14 @@ export default function AdminCertificaciones() {
   const [guardando, setGuardando] = useState(false);
 
   function cargar() {
-    api.get("/certificaciones?todos=true").then(setCertificaciones).catch(() => {});
+    if (!cache.get("/certificaciones")) setCargando(true);
+    api.get("/certificaciones?todos=true")
+      .then((data) => {
+        setCertificaciones(data);
+        cache.set("/certificaciones", data);
+      })
+      .catch(() => {})
+      .finally(() => setCargando(false));
   }
   useEffect(cargar, []);
 
@@ -57,27 +66,33 @@ export default function AdminCertificaciones() {
         Mostrá acá las capacitaciones y certificados de pulido/detailing de tu equipo.
       </p>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {certificaciones.map((c) => (
-          <div key={c.id} className="glass-card flex gap-4 rounded-xl p-4">
-            <div className="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-lg bg-electric-500/10 text-electric-400">
-              {c.imagenUrl ? (
-                <img src={uploadUrl(c.imagenUrl)} alt={c.titulo} className="h-full w-full object-cover" />
-              ) : (
-                <Award size={24} />
-              )}
-            </div>
-            <div className="flex-1">
-              <h3 className="font-display font-bold text-chrome-100">{c.titulo}</h3>
-              <p className="text-xs text-chrome-400">{c.nombreEmpleado}</p>
-              {c.institucion && <p className="text-xs text-chrome-400">{c.institucion}</p>}
-            </div>
-            <button onClick={() => eliminar(c.id)} className="text-chrome-300 hover:text-red-400">
-              <Trash2 size={16} />
-            </button>
+      <div className="mt-6">
+        {cargando && certificaciones.length === 0 ? (
+          <SkeletonCards />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {certificaciones.map((c) => (
+              <div key={c.id} className="glass-card flex gap-4 rounded-xl p-4">
+                <div className="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-lg bg-electric-500/10 text-electric-400">
+                  {c.imagenUrl ? (
+                    <img src={uploadUrl(c.imagenUrl)} alt={c.titulo} className="h-full w-full object-cover" />
+                  ) : (
+                    <Award size={24} />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-display font-bold text-chrome-100">{c.titulo}</h3>
+                  <p className="text-xs text-chrome-400">{c.nombreEmpleado}</p>
+                  {c.institucion && <p className="text-xs text-chrome-400">{c.institucion}</p>}
+                </div>
+                <button onClick={() => eliminar(c.id)} className="text-chrome-300 hover:text-red-400">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            {certificaciones.length === 0 && <p className="text-chrome-400">Todavía no cargaste certificaciones.</p>}
           </div>
-        ))}
-        {certificaciones.length === 0 && <p className="text-chrome-400">Todavía no cargaste certificaciones.</p>}
+        )}
       </div>
 
       {mostrarForm && (

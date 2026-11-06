@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
-import { api, uploadUrl } from "../../lib/api";
+import { api, cache, uploadUrl } from "../../lib/api";
+import { SkeletonServicios } from "../../components/admin/AdminSkeletons.jsx";
 
 const VACIO = {
   nombre: "",
@@ -18,7 +19,8 @@ const VACIO = {
 const ICONOS_DISPONIBLES = ["droplets", "sparkles", "car-front", "sofa", "star", "lightbulb"];
 
 export default function AdminServicios() {
-  const [servicios, setServicios] = useState([]);
+  const [servicios, setServicios] = useState(() => cache.get("/servicios") || []);
+  const [cargando, setCargando] = useState(() => !cache.get("/servicios"));
   const [form, setForm] = useState(VACIO);
   const [imagen, setImagen] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
@@ -27,7 +29,14 @@ export default function AdminServicios() {
   const [guardando, setGuardando] = useState(false);
 
   function cargar() {
-    api.get("/servicios?todos=true").then(setServicios).catch(() => {});
+    if (!cache.get("/servicios")) setCargando(true);
+    api.get("/servicios?todos=true")
+      .then((data) => {
+        setServicios(data);
+        cache.set("/servicios", data);
+      })
+      .catch(() => {})
+      .finally(() => setCargando(false));
   }
   useEffect(cargar, []);
 
@@ -104,38 +113,44 @@ export default function AdminServicios() {
         </button>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {servicios.map((s) => (
-          <div key={s.id} className="glass-card rounded-xl p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                {s.masVendido && (
-                  <span className="mb-1 inline-block rounded-full bg-electric-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-electric-400">
-                    Más vendido
-                  </span>
+      <div className="mt-6">
+        {cargando && servicios.length === 0 ? (
+          <SkeletonServicios />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {servicios.map((s) => (
+              <div key={s.id} className="glass-card rounded-xl p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    {s.masVendido && (
+                      <span className="mb-1 inline-block rounded-full bg-electric-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-electric-400">
+                        Más vendido
+                      </span>
+                    )}
+                    <h3 className="font-display font-bold text-chrome-100">{s.nombre}</h3>
+                    <p className="mt-1 text-xs text-chrome-400">{s.tipoVehiculo}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => editar(s)} className="text-chrome-300 hover:text-electric-400">
+                      <Pencil size={16} />
+                    </button>
+                    <button onClick={() => eliminar(s.id)} className="text-chrome-300 hover:text-red-400">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+                <p className="mt-2 text-sm text-chrome-300">{s.descripcion}</p>
+                {s.precioDesde && (
+                  <p className="mt-2 font-display text-electric-400">
+                    Desde ${Number(s.precioDesde).toLocaleString("es-AR")}
+                  </p>
                 )}
-                <h3 className="font-display font-bold text-chrome-100">{s.nombre}</h3>
-                <p className="mt-1 text-xs text-chrome-400">{s.tipoVehiculo}</p>
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => editar(s)} className="text-chrome-300 hover:text-electric-400">
-                  <Pencil size={16} />
-                </button>
-                <button onClick={() => eliminar(s.id)} className="text-chrome-300 hover:text-red-400">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-            <p className="mt-2 text-sm text-chrome-300">{s.descripcion}</p>
-            {s.precioDesde && (
-              <p className="mt-2 font-display text-electric-400">
-                Desde ${Number(s.precioDesde).toLocaleString("es-AR")}
-              </p>
+            ))}
+            {servicios.length === 0 && (
+              <p className="text-chrome-400">Todavía no cargaste servicios.</p>
             )}
           </div>
-        ))}
-        {servicios.length === 0 && (
-          <p className="text-chrome-400">Todavía no cargaste servicios.</p>
         )}
       </div>
 
