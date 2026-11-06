@@ -28,6 +28,8 @@ model Usuario {
   password  String
   rol       Rol      @default(ADMIN)
   createdAt DateTime @default(now())
+
+  @@map("usuario")
 }
 
 model Servicio {
@@ -46,6 +48,8 @@ model Servicio {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   resenas      Resena[]
+
+  @@map("servicio")
 }
 
 model Resena {
@@ -59,6 +63,7 @@ model Resena {
   createdAt      DateTime @default(now())
 
   @@index([servicioId])
+  @@map("resena")
 }
 
 model Producto {
@@ -72,6 +77,8 @@ model Producto {
   activo      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@map("producto")
 }
 
 model Marca {
@@ -81,6 +88,8 @@ model Marca {
   orden     Int      @default(0)
   activo    Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  @@map("marca")
 }
 
 model Resultado {
@@ -92,6 +101,8 @@ model Resultado {
   orden         Int      @default(0)
   activo        Boolean  @default(true)
   createdAt     DateTime @default(now())
+
+  @@map("resultado")
 }
 
 model Certificacion {
@@ -105,4 +116,6 @@ model Certificacion {
   orden          Int      @default(0)
   activo         Boolean  @default(true)
   createdAt      DateTime @default(now())
+
+  @@map("certificacion")
 }

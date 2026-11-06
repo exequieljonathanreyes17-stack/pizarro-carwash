@@ -15,13 +15,18 @@ function conPromedio(servicio) {
 
 // GET /api/servicios (público) - incluye promedio de estrellas calculado
 router.get("/", async (req, res) => {
-  const soloActivos = req.query.todos !== "true";
-  const servicios = await prisma.servicio.findMany({
-    where: soloActivos ? { activo: true } : undefined,
-    include: { resenas: { where: { aprobada: true }, select: { calificacion: true } } },
-    orderBy: { orden: "asc" },
-  });
-  res.json(servicios.map(conPromedio));
+  try {
+    const soloActivos = req.query.todos !== "true";
+    const servicios = await prisma.servicio.findMany({
+      where: soloActivos ? { activo: true } : undefined,
+      include: { resenas: { where: { aprobada: true }, select: { calificacion: true } } },
+      orderBy: { orden: "asc" },
+    });
+    res.json(servicios.map(conPromedio));
+  } catch (err) {
+    console.error("Error al obtener servicios:", err);
+    res.status(500).json({ error: err.message || "Error al obtener servicios" });
+  }
 });
 
 // GET /api/servicios/:id (público)
