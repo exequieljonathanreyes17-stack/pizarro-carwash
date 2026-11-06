@@ -2,15 +2,26 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2, X, Award } from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
 import { SkeletonCards } from "../../components/admin/AdminSkeletons.jsx";
+import Paginacion from "../../components/admin/Paginacion.jsx";
+
+const ITEMS_POR_PAGINA = 6;
 
 export default function AdminMarcas() {
   const [marcas, setMarcas] = useState(() => cache.get("/marcas") || []);
   const [cargando, setCargando] = useState(() => !cache.get("/marcas"));
+  const [pagina, setPagina] = useState(1);
   const [nombre, setNombre] = useState("");
   const [logo, setLogo] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
+
+  const totalPaginas = Math.ceil(marcas.length / ITEMS_POR_PAGINA) || 1;
+  const paginaValida = Math.min(Math.max(1, pagina), totalPaginas);
+  const marcasPaginadas = marcas.slice(
+    (paginaValida - 1) * ITEMS_POR_PAGINA,
+    paginaValida * ITEMS_POR_PAGINA
+  );
 
   function cargar() {
     if (!cache.get("/marcas")) setCargando(true);
@@ -66,22 +77,32 @@ export default function AdminMarcas() {
         {cargando && marcas.length === 0 ? (
           <SkeletonCards />
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {marcas.map((m) => (
-              <div key={m.id} className="glass-card flex flex-col items-center gap-2 rounded-xl p-4">
-                {m.logoUrl ? (
-                  <img src={uploadUrl(m.logoUrl)} alt={m.nombre} className="h-12 w-full object-contain" />
-                ) : (
-                  <Award className="text-chrome-400" size={28} />
-                )}
-                <span className="text-xs text-chrome-300">{m.nombre}</span>
-                <button onClick={() => eliminar(m.id)} className="text-chrome-400 hover:text-red-400">
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-            {marcas.length === 0 && <p className="text-chrome-400">Todavía no cargaste marcas.</p>}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+              {marcasPaginadas.map((m) => (
+                <div key={m.id} className="glass-card flex flex-col items-center gap-2 rounded-xl p-4">
+                  {m.logoUrl ? (
+                    <img src={uploadUrl(m.logoUrl)} alt={m.nombre} className="h-12 w-full object-contain" />
+                  ) : (
+                    <Award className="text-chrome-400" size={28} />
+                  )}
+                  <span className="text-xs text-chrome-300">{m.nombre}</span>
+                  <button onClick={() => eliminar(m.id)} className="text-chrome-400 hover:text-red-400">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+              {marcas.length === 0 && <p className="text-chrome-400">Todavía no cargaste marcas.</p>}
+            </div>
+
+            <Paginacion
+              paginaActual={paginaValida}
+              totalPaginas={totalPaginas}
+              onCambiarPagina={setPagina}
+              totalItems={marcas.length}
+              itemsPorPagina={ITEMS_POR_PAGINA}
+            />
+          </>
         )}
       </div>
 

@@ -2,18 +2,29 @@ import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
 import { SkeletonProductos } from "../../components/admin/AdminSkeletons.jsx";
+import Paginacion from "../../components/admin/Paginacion.jsx";
+
+const ITEMS_POR_PAGINA = 6;
 
 const VACIO = { nombre: "", descripcion: "", precio: "", categoria: "Auto", destacado: false, activo: true };
 
 export default function AdminProductos() {
   const [productos, setProductos] = useState(() => cache.get("/productos") || []);
   const [cargando, setCargando] = useState(() => !cache.get("/productos"));
+  const [pagina, setPagina] = useState(1);
   const [form, setForm] = useState(VACIO);
   const [imagen, setImagen] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
+
+  const totalPaginas = Math.ceil(productos.length / ITEMS_POR_PAGINA) || 1;
+  const paginaValida = Math.min(Math.max(1, pagina), totalPaginas);
+  const productosPaginados = productos.slice(
+    (paginaValida - 1) * ITEMS_POR_PAGINA,
+    paginaValida * ITEMS_POR_PAGINA
+  );
 
   function cargar() {
     if (!cache.get("/productos")) setCargando(true);
@@ -108,7 +119,7 @@ export default function AdminProductos() {
             <SkeletonProductos />
           ) : (
             <tbody>
-              {productos.map((p) => (
+              {productosPaginados.map((p) => (
                 <tr key={p.id} className="border-t border-electric-500/10">
                   <td className="flex items-center gap-3 px-4 py-3">
                     {p.imagenUrl && (
@@ -149,6 +160,14 @@ export default function AdminProductos() {
           )}
         </table>
       </div>
+
+      <Paginacion
+        paginaActual={paginaValida}
+        totalPaginas={totalPaginas}
+        onCambiarPagina={setPagina}
+        totalItems={productos.length}
+        itemsPorPagina={ITEMS_POR_PAGINA}
+      />
 
       {mostrarForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">

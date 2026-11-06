@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
 import { SkeletonServicios } from "../../components/admin/AdminSkeletons.jsx";
+import Paginacion from "../../components/admin/Paginacion.jsx";
+
+const ITEMS_POR_PAGINA = 6;
 
 const VACIO = {
   nombre: "",
@@ -21,12 +24,20 @@ const ICONOS_DISPONIBLES = ["droplets", "sparkles", "car-front", "sofa", "star",
 export default function AdminServicios() {
   const [servicios, setServicios] = useState(() => cache.get("/servicios") || []);
   const [cargando, setCargando] = useState(() => !cache.get("/servicios"));
+  const [pagina, setPagina] = useState(1);
   const [form, setForm] = useState(VACIO);
   const [imagen, setImagen] = useState(null);
   const [editandoId, setEditandoId] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
+
+  const totalPaginas = Math.ceil(servicios.length / ITEMS_POR_PAGINA) || 1;
+  const paginaValida = Math.min(Math.max(1, pagina), totalPaginas);
+  const serviciosPaginados = servicios.slice(
+    (paginaValida - 1) * ITEMS_POR_PAGINA,
+    paginaValida * ITEMS_POR_PAGINA
+  );
 
   function cargar() {
     if (!cache.get("/servicios")) setCargando(true);
@@ -117,40 +128,50 @@ export default function AdminServicios() {
         {cargando && servicios.length === 0 ? (
           <SkeletonServicios />
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {servicios.map((s) => (
-              <div key={s.id} className="glass-card rounded-xl p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    {s.masVendido && (
-                      <span className="mb-1 inline-block rounded-full bg-electric-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-electric-400">
-                        Más vendido
-                      </span>
-                    )}
-                    <h3 className="font-display font-bold text-chrome-100">{s.nombre}</h3>
-                    <p className="mt-1 text-xs text-chrome-400">{s.tipoVehiculo}</p>
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {serviciosPaginados.map((s) => (
+                <div key={s.id} className="glass-card rounded-xl p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      {s.masVendido && (
+                        <span className="mb-1 inline-block rounded-full bg-electric-500/15 px-2 py-0.5 text-[10px] font-bold uppercase text-electric-400">
+                          Más vendido
+                        </span>
+                      )}
+                      <h3 className="font-display font-bold text-chrome-100">{s.nombre}</h3>
+                      <p className="mt-1 text-xs text-chrome-400">{s.tipoVehiculo}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => editar(s)} className="text-chrome-300 hover:text-electric-400">
+                        <Pencil size={16} />
+                      </button>
+                      <button onClick={() => eliminar(s.id)} className="text-chrome-300 hover:text-red-400">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => editar(s)} className="text-chrome-300 hover:text-electric-400">
-                      <Pencil size={16} />
-                    </button>
-                    <button onClick={() => eliminar(s.id)} className="text-chrome-300 hover:text-red-400">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                  <p className="mt-2 text-sm text-chrome-300">{s.descripcion}</p>
+                  {s.precioDesde && (
+                    <p className="mt-2 font-display text-electric-400">
+                      Desde ${Number(s.precioDesde).toLocaleString("es-AR")}
+                    </p>
+                  )}
                 </div>
-                <p className="mt-2 text-sm text-chrome-300">{s.descripcion}</p>
-                {s.precioDesde && (
-                  <p className="mt-2 font-display text-electric-400">
-                    Desde ${Number(s.precioDesde).toLocaleString("es-AR")}
-                  </p>
-                )}
-              </div>
-            ))}
-            {servicios.length === 0 && (
-              <p className="text-chrome-400">Todavía no cargaste servicios.</p>
-            )}
-          </div>
+              ))}
+              {servicios.length === 0 && (
+                <p className="text-chrome-400">Todavía no cargaste servicios.</p>
+              )}
+            </div>
+
+            <Paginacion
+              paginaActual={paginaValida}
+              totalPaginas={totalPaginas}
+              onCambiarPagina={setPagina}
+              totalItems={servicios.length}
+              itemsPorPagina={ITEMS_POR_PAGINA}
+            />
+          </>
         )}
       </div>
 
