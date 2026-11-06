@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Lock } from "lucide-react";
 
 const LINKS = [
   { to: "/#nosotros", label: "Nosotros" },
@@ -52,14 +52,25 @@ export default function Navbar() {
           ))}
         </ul>
 
-        <a
-          href="https://wa.me/5493804111152"
-          target="_blank"
-          rel="noreferrer"
-          className="btn-primary hidden lg:inline-flex"
-        >
-          Reservá tu turno
-        </a>
+        <div className="hidden lg:flex items-center gap-3">
+          <Link
+            to="/admin"
+            title="Panel de Administrador"
+            className="flex items-center gap-1.5 rounded-lg border border-electric-500/20 bg-carbon-900/60 px-3 py-2 text-xs font-semibold text-chrome-300 transition-all hover:border-electric-400 hover:text-electric-400"
+          >
+            <Lock size={14} />
+            <span>Admin</span>
+          </Link>
+
+          <a
+            href="https://wa.me/5493804111152"
+            target="_blank"
+            rel="noreferrer"
+            className="btn-primary"
+          >
+            Reservá tu turno
+          </a>
+        </div>
 
         <button
           className="text-chrome-100 lg:hidden"
@@ -95,6 +106,16 @@ export default function Navbar() {
               >
                 Reservá tu turno
               </a>
+            </li>
+            <li className="pt-2 border-t border-carbon-800/80">
+              <Link
+                to="/admin"
+                onClick={() => setAbierto(false)}
+                className="flex items-center gap-2 font-display text-sm font-semibold text-chrome-300 hover:text-electric-400"
+              >
+                <Lock size={16} />
+                Acceso Administrador
+              </Link>
             </li>
           </ul>
         </div>
