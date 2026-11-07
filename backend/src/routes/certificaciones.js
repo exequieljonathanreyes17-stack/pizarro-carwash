@@ -64,7 +64,10 @@ router.delete("/:id", requireAuth, async (req, res) => {
     await prisma.certificacion.delete({ where: { id: Number(req.params.id) } });
     res.json({ ok: true });
   } catch (err) {
-    res.status(404).json({ error: "Certificación no encontrada" });
+    console.error("Error al eliminar certificación:", err);
+    res.status(err.code === "P2025" ? 404 : 500).json({
+      error: err.code === "P2025" ? "Certificación no encontrada" : "Error al eliminar la certificación",
+    });
   }
 });
 

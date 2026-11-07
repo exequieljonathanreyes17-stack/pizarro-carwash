@@ -79,7 +79,10 @@ router.delete("/:id", requireAuth, async (req, res) => {
     await prisma.producto.delete({ where: { id } });
     res.json({ ok: true });
   } catch (err) {
-    res.status(404).json({ error: "Producto no encontrado" });
+    console.error("Error al eliminar producto:", err);
+    res.status(err.code === "P2025" ? 404 : 500).json({
+      error: err.code === "P2025" ? "Producto no encontrado" : "Error al eliminar el producto",
+    });
   }
 });
 

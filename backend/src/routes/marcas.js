@@ -36,7 +36,10 @@ router.delete("/:id", requireAuth, async (req, res) => {
     await prisma.marca.delete({ where: { id: Number(req.params.id) } });
     res.json({ ok: true });
   } catch (err) {
-    res.status(404).json({ error: "Marca no encontrada" });
+    console.error("Error al eliminar marca:", err);
+    res.status(err.code === "P2025" ? 404 : 500).json({
+      error: err.code === "P2025" ? "Marca no encontrada" : "Error al eliminar la marca",
+    });
   }
 });
 

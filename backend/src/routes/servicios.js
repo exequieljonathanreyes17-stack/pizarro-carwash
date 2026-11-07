@@ -133,7 +133,10 @@ router.delete("/:id", requireAuth, async (req, res) => {
     await prisma.servicio.delete({ where: { id: Number(req.params.id) } });
     res.json({ ok: true });
   } catch (err) {
-    res.status(404).json({ error: "Servicio no encontrado" });
+    console.error("Error al eliminar servicio:", err);
+    res.status(err.code === "P2025" ? 404 : 500).json({
+      error: err.code === "P2025" ? "Servicio no encontrado" : "Error al eliminar el servicio",
+    });
   }
 });
 

@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const prisma = require("../lib/prisma");
+const { requireAuth } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: usuario.id, email: usuario.email, rol: usuario.rol },
       process.env.JWT_SECRET || "cambia-esta-clave",
-      { expiresIn: "12h" }
+      { expiresIn: "7d" }
     );
 
     res.json({
@@ -40,9 +41,9 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// GET /api/auth/me
-router.get("/me", async (req, res) => {
-  res.json({ ok: true });
+// GET /api/auth/me (protegido)
+router.get("/me", requireAuth, async (req, res) => {
+  res.json({ ok: true, usuario: req.usuario });
 });
 
 module.exports = router;
