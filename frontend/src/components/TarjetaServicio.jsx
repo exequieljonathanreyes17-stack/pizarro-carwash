@@ -24,7 +24,7 @@ export default function TarjetaServicio({ servicio }) {
       
       {/* Etiqueta Flotante - Más elegido */}
       {servicio.masVendido && (
-        <div className="absolute left-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-electric-500/90 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg shadow-electric-500/20 backdrop-blur-sm">
+        <div className="absolute left-4 top-4 z-30 flex items-center gap-1.5 rounded-full bg-electric-500/90 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg shadow-electric-500/20 backdrop-blur-sm">
           <Sparkles size={14} className="text-white" />
           Más elegido
         </div>

@@ -4,7 +4,7 @@ import { useResultados } from "../hooks/useDatos";
 import { uploadUrl } from "../lib/api";
 
 export default function ResultadosPreview() {
-  const { resultados } = useResultados();
+  const { resultados, cargando } = useResultados();
   const masReciente = [...resultados].sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
   )[0];
@@ -17,7 +17,20 @@ export default function ResultadosPreview() {
           <h2 className="section-title mt-3">Nuestro último trabajo</h2>
         </div>
 
-        {!masReciente ? (
+        {cargando ? (
+          <div className="mx-auto mt-14 max-w-3xl">
+            <div className="glass-card overflow-hidden rounded-xl animate-pulse">
+              <div className="grid grid-cols-2">
+                <div className="h-64 w-full bg-carbon-800/60 border-r border-carbon-800/40" />
+                <div className="h-64 w-full bg-carbon-800/50" />
+              </div>
+              <div className="p-6 space-y-2">
+                <div className="h-6 w-1/2 rounded bg-carbon-800" />
+                <div className="h-4 w-3/4 rounded bg-carbon-800/40" />
+              </div>
+            </div>
+          </div>
+        ) : !masReciente ? (
           <div className="mx-auto mt-14 flex max-w-md flex-col items-center gap-3 rounded-xl border border-dashed border-chrome-400/20 p-10 text-center">
             <ImageOff className="text-chrome-400" size={32} />
             <p className="text-chrome-400">Próximamente vas a ver acá fotos de nuestros trabajos.</p>

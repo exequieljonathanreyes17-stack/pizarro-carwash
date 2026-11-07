@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, ImageOff } from "lucide-react";
 import Layout from "../components/Layout.jsx";
+import { SkeletonResultados } from "../components/Skeletons.jsx";
 import { useResultados } from "../hooks/useDatos";
 import { uploadUrl } from "../lib/api";
 
@@ -17,7 +18,11 @@ export default function ResultadosPage() {
             <h1 className="section-title mt-3">Antes y después de nuestros trabajos</h1>
           </div>
 
-          {!cargando && resultados.length === 0 ? (
+          {cargando ? (
+            <div className="mt-14">
+              <SkeletonResultados cantidad={6} />
+            </div>
+          ) : resultados.length === 0 ? (
             <div className="mx-auto mt-14 flex max-w-md flex-col items-center gap-3 rounded-xl border border-dashed border-chrome-400/20 p-10 text-center">
               <ImageOff className="text-chrome-400" size={32} />
               <p className="text-chrome-400">Próximamente vas a ver acá fotos de nuestros trabajos.</p>

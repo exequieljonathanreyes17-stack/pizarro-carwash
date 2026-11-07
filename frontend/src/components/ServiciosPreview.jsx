@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useServicios } from "../hooks/useDatos";
 import TarjetaServicio from "./TarjetaServicio.jsx";
+import { SkeletonServicios } from "./Skeletons.jsx";
 
 function ordenarDestacados(servicios) {
   const masVendido = servicios.find((s) => s.masVendido);
@@ -26,13 +27,15 @@ export default function ServiciosPreview() {
           <p className="mt-4 text-chrome-300">Tocá un servicio para ver el detalle completo de qué incluye.</p>
         </div>
 
-        {!cargando && servicios.length === 0 && (
+        {cargando ? (
+          <div className="mt-14">
+            <SkeletonServicios cantidad={3} />
+          </div>
+        ) : servicios.length === 0 ? (
           <div className="mx-auto mt-14 flex max-w-md flex-col items-center gap-3 rounded-xl border border-dashed border-chrome-400/20 p-10 text-center">
             <p className="text-chrome-400">Todavía no hay servicios cargados.</p>
           </div>
-        )}
-
-        {destacados.length > 0 && (
+        ) : (
           <>
             <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {destacados.map((s) => (

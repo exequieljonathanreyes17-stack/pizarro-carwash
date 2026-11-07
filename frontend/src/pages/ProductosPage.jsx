@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import Layout from "../components/Layout.jsx";
 import TarjetaProducto from "../components/TarjetaProducto.jsx";
+import { SkeletonProductos } from "../components/Skeletons.jsx";
 import { useProductos } from "../hooks/useDatos";
 
 export default function ProductosPage() {
@@ -41,7 +42,11 @@ export default function ProductosPage() {
             </div>
           )}
 
-          {!cargando && filtrados.length === 0 ? (
+          {cargando ? (
+            <div className="mt-10">
+              <SkeletonProductos cantidad={8} />
+            </div>
+          ) : filtrados.length === 0 ? (
             <p className="mt-14 text-center text-chrome-400">No hay productos en esta categoría.</p>
           ) : (
             <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">

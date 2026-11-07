@@ -3,6 +3,7 @@ import { ArrowRight, PackageSearch } from "lucide-react";
 import { useProductos } from "../hooks/useDatos";
 import TarjetaProducto from "./TarjetaProducto.jsx";
 import MarcasSection from "./MarcasSection.jsx";
+import { SkeletonProductos } from "./Skeletons.jsx";
 
 export default function ProductosPreview() {
   const { productos, cargando } = useProductos();
@@ -16,14 +17,16 @@ export default function ProductosPreview() {
           <h2 className="section-title mt-3">Lo que usamos</h2>
         </div>
 
-        {!cargando && productos.length === 0 && (
+        {cargando ? (
+          <div className="mt-14">
+            <SkeletonProductos cantidad={3} />
+          </div>
+        ) : productos.length === 0 ? (
           <div className="mx-auto mt-14 flex max-w-md flex-col items-center gap-3 rounded-xl border border-dashed border-chrome-400/20 p-10 text-center">
             <PackageSearch className="text-chrome-400" size={32} />
             <p className="text-chrome-400">Todavía no hay productos cargados.</p>
           </div>
-        )}
-
-        {productos.length > 0 && (
+        ) : (
           <>
             <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {destacados.map((p) => (
