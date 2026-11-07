@@ -18,6 +18,7 @@ const VACIO = {
   orden: 0,
   activo: true,
   masVendido: false,
+  imagenUrl: "",
 };
 
 const ICONOS_DISPONIBLES = ["droplets", "sparkles", "car-front", "sofa", "star", "lightbulb"];
@@ -74,6 +75,7 @@ export default function AdminServicios() {
       orden: s.orden,
       activo: s.activo,
       masVendido: s.masVendido,
+      imagenUrl: s.imagenUrl || "",
     });
     setImagen(null);
     setEditandoId(s.id);
@@ -152,13 +154,21 @@ export default function AdminServicios() {
                   <div>
                     <div className="flex gap-4">
                       {/* Miniatura visual */}
-                      <div className="relative h-20 w-20 flex-none overflow-hidden rounded-xl border border-carbon-800 bg-carbon-950/80">
+                      <div className="relative h-20 w-20 flex-none overflow-hidden rounded-xl border border-carbon-800 bg-carbon-950/80 flex items-center justify-center">
                         {s.imagenUrl ? (
-                          <img
-                            src={uploadUrl(s.imagenUrl)}
-                            alt={s.nombre}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
+                          <>
+                            <img
+                              src={uploadUrl(s.imagenUrl)}
+                              alt=""
+                              aria-hidden="true"
+                              className="absolute inset-0 h-full w-full object-cover blur-sm opacity-25"
+                            />
+                            <img
+                              src={uploadUrl(s.imagenUrl)}
+                              alt={s.nombre}
+                              className="relative z-10 h-full w-full object-contain p-1 transition-transform duration-300 group-hover:scale-105"
+                            />
+                          </>
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-electric-400/80">
                             <Wrench size={26} />
@@ -386,6 +396,18 @@ export default function AdminServicios() {
                   onChange={(e) => setImagen(e.target.files[0])}
                   className="w-full text-sm text-chrome-300"
                 />
+                {(imagen || form.imagenUrl) && (
+                  <div className="mt-2 flex items-center gap-3 rounded-lg border border-carbon-800 bg-carbon-950/60 p-2">
+                    <img
+                      src={imagen ? URL.createObjectURL(imagen) : uploadUrl(form.imagenUrl)}
+                      alt="Vista previa"
+                      className="h-14 w-20 rounded object-contain bg-carbon-900 border border-carbon-800"
+                    />
+                    <span className="text-xs text-chrome-400">
+                      {imagen ? imagen.name : "Imagen actual del servicio"}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="flex gap-6">
                 <label className="flex items-center gap-2 text-sm text-chrome-300">

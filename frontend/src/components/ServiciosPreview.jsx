@@ -14,7 +14,7 @@ function ordenarDestacados(servicios) {
 }
 
 export default function ServiciosPreview() {
-  const { servicios } = useServicios();
+  const { servicios, cargando } = useServicios();
   const destacados = ordenarDestacados(servicios);
 
   return (
@@ -26,17 +26,27 @@ export default function ServiciosPreview() {
           <p className="mt-4 text-chrome-300">Tocá un servicio para ver el detalle completo de qué incluye.</p>
         </div>
 
-        <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {destacados.map((s) => (
-            <TarjetaServicio key={s.id} servicio={s} />
-          ))}
-        </div>
+        {!cargando && servicios.length === 0 && (
+          <div className="mx-auto mt-14 flex max-w-md flex-col items-center gap-3 rounded-xl border border-dashed border-chrome-400/20 p-10 text-center">
+            <p className="text-chrome-400">Todavía no hay servicios cargados.</p>
+          </div>
+        )}
 
-        <div className="mt-10 flex justify-center">
-          <Link to="/servicios" className="btn-secondary">
-            Ver todos los servicios <ArrowRight size={18} />
-          </Link>
-        </div>
+        {destacados.length > 0 && (
+          <>
+            <div className="mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {destacados.map((s) => (
+                <TarjetaServicio key={s.id} servicio={s} />
+              ))}
+            </div>
+
+            <div className="mt-10 flex justify-center">
+              <Link to="/servicios" className="btn-secondary">
+                Ver todos los servicios <ArrowRight size={18} />
+              </Link>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

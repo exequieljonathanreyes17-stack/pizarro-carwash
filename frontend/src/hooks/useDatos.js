@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
-import { SERVICIOS_RESPALDO } from "../data/serviciosRespaldo";
 
 export function useServicios() {
-  const [servicios, setServicios] = useState(SERVICIOS_RESPALDO);
+  const [servicios, setServicios] = useState([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     api
       .get("/servicios")
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) setServicios(data);
+        if (Array.isArray(data)) setServicios(data);
+        else setServicios([]);
       })
-      .catch(() => {})
+      .catch(() => setServicios([]))
       .finally(() => setCargando(false));
   }, []);
 

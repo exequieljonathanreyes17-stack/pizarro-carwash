@@ -12,7 +12,7 @@ import { api, uploadUrl } from "../lib/api";
 
 export default function ServicioDetallePage() {
   const { slug } = useParams();
-  const { servicios } = useServicios();
+  const { servicios, cargando } = useServicios();
   const servicio = servicios.find((s) => slugify(s.nombre) === slug);
 
   const [resenas, setResenas] = useState([]);
@@ -30,6 +30,16 @@ export default function ServicioDetallePage() {
   }, [servicio?.id]);
 
   if (!servicio) {
+    if (cargando) {
+      return (
+        <Layout>
+          <div className="mx-auto max-w-2xl px-4 py-32 text-center text-chrome-400">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-electric-400 border-t-transparent mb-4" />
+            <p>Cargando servicio...</p>
+          </div>
+        </Layout>
+      );
+    }
     return (
       <Layout>
         <div className="mx-auto max-w-2xl px-4 py-24 text-center">
@@ -101,13 +111,21 @@ export default function ServicioDetallePage() {
               )}
             </div>
 
-            <div className="glass-card flex items-center justify-center rounded-xl p-6">
+            <div className="glass-card flex items-center justify-center rounded-xl p-4 sm:p-6 overflow-hidden">
               {servicio.imagenUrl ? (
-                <img
-                  src={uploadUrl(servicio.imagenUrl)}
-                  alt={servicio.nombre}
-                  className="w-full rounded-lg object-cover"
-                />
+                <div className="relative w-full max-h-[420px] flex items-center justify-center overflow-hidden rounded-lg bg-carbon-950/60">
+                  <img
+                    src={uploadUrl(servicio.imagenUrl)}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 h-full w-full object-cover blur-md opacity-25 scale-110"
+                  />
+                  <img
+                    src={uploadUrl(servicio.imagenUrl)}
+                    alt={servicio.nombre}
+                    className="relative z-10 max-h-[420px] w-full object-contain rounded-lg p-2"
+                  />
+                </div>
               ) : (
                 <AutoEjemplo resaltar={contenido.resaltar} className="w-full" />
               )}
