@@ -14,6 +14,7 @@ export default function AdminResenas() {
   const [pagina, setPagina] = useState(1);
   const [resenaAEliminar, setResenaAEliminar] = useState(null);
   const [eliminando, setEliminando] = useState(false);
+  const [errorEliminar, setErrorEliminar] = useState("");
 
   const totalPaginas = Math.ceil(resenas.length / ITEMS_POR_PAGINA) || 1;
   const paginaValida = Math.min(Math.max(1, pagina), totalPaginas);
@@ -37,12 +38,14 @@ export default function AdminResenas() {
   async function confirmarEliminar() {
     if (!resenaAEliminar) return;
     setEliminando(true);
+    setErrorEliminar("");
     try {
       await api.del(`/resenas/${resenaAEliminar.id}`, { auth: true });
-      cargar();
+      setResenas((prev) => prev.filter((r) => r.id !== resenaAEliminar.id));
       setResenaAEliminar(null);
+      cargar();
     } catch (err) {
-      alert(err.message || "Error al eliminar reseña");
+      setErrorEliminar(err.message || "Error al eliminar reseña");
     } finally {
       setEliminando(false);
     }
@@ -76,7 +79,13 @@ export default function AdminResenas() {
                       {new Date(r.createdAt).toLocaleString("es-AR")}
                     </p>
                   </div>
-                  <button onClick={() => setResenaAEliminar(r)} className="text-chrome-300 hover:text-red-400">
+                  <button
+                    onClick={() => {
+                      setErrorEliminar("");
+                      setResenaAEliminar(r);
+                    }}
+                    className="text-chrome-300 hover:text-red-400"
+                  >
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -98,12 +107,16 @@ export default function AdminResenas() {
       {/* Modal de confirmación para eliminar reseña */}
       <ModalConfirmar
         abierto={!!resenaAEliminar}
-        onCerrar={() => setResenaAEliminar(null)}
+        onCerrar={() => {
+          setResenaAEliminar(null);
+          setErrorEliminar("");
+        }}
         onConfirmar={confirmarEliminar}
         titulo="¿Eliminar reseña?"
         mensaje="¿Estás seguro de que deseas eliminar esta reseña de cliente? Se borrará permanentemente."
         nombreItem={resenaAEliminar ? `${resenaAEliminar.nombreCliente} (${resenaAEliminar.calificacion}★)` : ""}
         cargando={eliminando}
+        error={errorEliminar}
       />
     </div>
   );

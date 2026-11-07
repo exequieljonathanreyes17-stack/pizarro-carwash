@@ -16,6 +16,7 @@ export default function AdminCertificaciones() {
   const [guardando, setGuardando] = useState(false);
   const [certificacionAEliminar, setCertificacionAEliminar] = useState(null);
   const [eliminando, setEliminando] = useState(false);
+  const [errorEliminar, setErrorEliminar] = useState("");
 
   function cargar() {
     if (!cache.get("/certificaciones")) setCargando(true);
@@ -32,12 +33,14 @@ export default function AdminCertificaciones() {
   async function confirmarEliminar() {
     if (!certificacionAEliminar) return;
     setEliminando(true);
+    setErrorEliminar("");
     try {
       await api.del(`/certificaciones/${certificacionAEliminar.id}`, { auth: true });
-      cargar();
+      setCertificaciones((prev) => prev.filter((c) => c.id !== certificacionAEliminar.id));
       setCertificacionAEliminar(null);
+      cargar();
     } catch (err) {
-      setError(err.message || "Error al eliminar certificación");
+      setErrorEliminar(err.message || "Error al eliminar certificación");
     } finally {
       setEliminando(false);
     }
@@ -96,7 +99,13 @@ export default function AdminCertificaciones() {
                   <p className="text-xs text-chrome-400">{c.nombreEmpleado}</p>
                   {c.institucion && <p className="text-xs text-chrome-400">{c.institucion}</p>}
                 </div>
-                <button onClick={() => setCertificacionAEliminar(c)} className="text-chrome-300 hover:text-red-400">
+                <button
+                  onClick={() => {
+                    setErrorEliminar("");
+                    setCertificacionAEliminar(c);
+                  }}
+                  className="text-chrome-300 hover:text-red-400"
+                >
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -186,12 +195,16 @@ export default function AdminCertificaciones() {
       {/* Modal de confirmación para eliminar certificación */}
       <ModalConfirmar
         abierto={!!certificacionAEliminar}
-        onCerrar={() => setCertificacionAEliminar(null)}
+        onCerrar={() => {
+          setCertificacionAEliminar(null);
+          setErrorEliminar("");
+        }}
         onConfirmar={confirmarEliminar}
         titulo="¿Eliminar certificación?"
         mensaje="¿Estás seguro de que deseas eliminar este certificado? Ya no aparecerá en la web pública."
         nombreItem={certificacionAEliminar?.titulo}
         cargando={eliminando}
+        error={errorEliminar}
       />
     </div>
   );

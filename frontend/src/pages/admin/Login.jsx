@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { LockKeyhole } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sesionExpirada = searchParams.get("expirado") === "true";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -33,6 +35,12 @@ export default function Login() {
           <h1 className="mt-4 font-display text-xl font-bold text-chrome-100">Panel de administrador</h1>
           <p className="mt-1 text-sm text-chrome-400">Pizarro Carwash</p>
         </div>
+
+        {sesionExpirada && (
+          <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-center text-xs text-yellow-300">
+            Tu sesión ha expirado o el token no es válido. Por favor, ingresá nuevamente.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="glass-card rounded-xl p-6">
           <div className="mb-4">

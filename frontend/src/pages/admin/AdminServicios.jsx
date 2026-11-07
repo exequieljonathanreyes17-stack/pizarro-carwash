@@ -34,6 +34,7 @@ export default function AdminServicios() {
   const [guardando, setGuardando] = useState(false);
   const [servicioAEliminar, setServicioAEliminar] = useState(null);
   const [eliminando, setEliminando] = useState(false);
+  const [errorEliminar, setErrorEliminar] = useState("");
 
   const totalPaginas = Math.ceil(servicios.length / ITEMS_POR_PAGINA) || 1;
   const paginaValida = Math.min(Math.max(1, pagina), totalPaginas);
@@ -82,12 +83,14 @@ export default function AdminServicios() {
   async function confirmarEliminar() {
     if (!servicioAEliminar) return;
     setEliminando(true);
+    setErrorEliminar("");
     try {
       await api.del(`/servicios/${servicioAEliminar.id}`, { auth: true });
-      cargar();
+      setServicios((prev) => prev.filter((s) => s.id !== servicioAEliminar.id));
       setServicioAEliminar(null);
+      cargar();
     } catch (err) {
-      setError(err.message || "Error al eliminar servicio");
+      setErrorEliminar(err.message || "Error al eliminar servicio");
     } finally {
       setEliminando(false);
     }
@@ -244,7 +247,10 @@ export default function AdminServicios() {
                         <Pencil size={14} />
                       </button>
                       <button
-                        onClick={() => setServicioAEliminar(s)}
+                        onClick={() => {
+                          setErrorEliminar("");
+                          setServicioAEliminar(s);
+                        }}
                         title="Eliminar servicio"
                         className="flex h-8 w-8 items-center justify-center rounded-lg border border-carbon-700 bg-carbon-800/60 text-chrome-300 transition-all hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400 active:scale-95"
                       >
@@ -413,12 +419,16 @@ export default function AdminServicios() {
       {/* Modal de confirmación para eliminar */}
       <ModalConfirmar
         abierto={!!servicioAEliminar}
-        onCerrar={() => setServicioAEliminar(null)}
+        onCerrar={() => {
+          setServicioAEliminar(null);
+          setErrorEliminar("");
+        }}
         onConfirmar={confirmarEliminar}
         titulo="¿Eliminar servicio?"
         mensaje="¿Estás seguro de que deseas eliminar este servicio? Ya no aparecerá en la web pública ni en el panel."
         nombreItem={servicioAEliminar?.nombre}
         cargando={eliminando}
+        error={errorEliminar}
       />
     </div>
   );

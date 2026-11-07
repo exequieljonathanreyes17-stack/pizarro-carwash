@@ -9,6 +9,7 @@ export default function ModalConfirmar({
   nombreItem = "",
   textoBoton = "Eliminar",
   cargando = false,
+  error = "",
 }) {
   if (!abierto) return null;
 
@@ -46,6 +47,13 @@ export default function ModalConfirmar({
             )}
           </div>
         </div>
+
+        {error && (
+          <div className="mt-4 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
+            <AlertTriangle size={16} className="flex-shrink-0 text-red-400" />
+            <span>{error}</span>
+          </div>
+        )}
 
         <div className="mt-6 flex items-center justify-end gap-3 pt-4 border-t border-carbon-800/80">
           <button

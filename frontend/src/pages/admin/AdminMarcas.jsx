@@ -18,6 +18,7 @@ export default function AdminMarcas() {
   const [guardando, setGuardando] = useState(false);
   const [marcaAEliminar, setMarcaAEliminar] = useState(null);
   const [eliminando, setEliminando] = useState(false);
+  const [errorEliminar, setErrorEliminar] = useState("");
 
   const totalPaginas = Math.ceil(marcas.length / ITEMS_POR_PAGINA) || 1;
   const paginaValida = Math.min(Math.max(1, pagina), totalPaginas);
@@ -41,12 +42,14 @@ export default function AdminMarcas() {
   async function confirmarEliminar() {
     if (!marcaAEliminar) return;
     setEliminando(true);
+    setErrorEliminar("");
     try {
       await api.del(`/marcas/${marcaAEliminar.id}`, { auth: true });
-      cargar();
+      setMarcas((prev) => prev.filter((m) => m.id !== marcaAEliminar.id));
       setMarcaAEliminar(null);
+      cargar();
     } catch (err) {
-      setError(err.message || "Error al eliminar marca");
+      setErrorEliminar(err.message || "Error al eliminar marca");
     } finally {
       setEliminando(false);
     }
@@ -98,7 +101,13 @@ export default function AdminMarcas() {
                     <Award className="text-chrome-400" size={28} />
                   )}
                   <span className="text-xs text-chrome-300">{m.nombre}</span>
-                  <button onClick={() => setMarcaAEliminar(m)} className="text-chrome-400 hover:text-red-400">
+                  <button
+                    onClick={() => {
+                      setErrorEliminar("");
+                      setMarcaAEliminar(m);
+                    }}
+                    className="text-chrome-400 hover:text-red-400"
+                  >
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -147,12 +156,16 @@ export default function AdminMarcas() {
       {/* Modal de confirmación para eliminar marca */}
       <ModalConfirmar
         abierto={!!marcaAEliminar}
-        onCerrar={() => setMarcaAEliminar(null)}
+        onCerrar={() => {
+          setMarcaAEliminar(null);
+          setErrorEliminar("");
+        }}
         onConfirmar={confirmarEliminar}
         titulo="¿Eliminar marca?"
         mensaje="¿Estás seguro de que deseas eliminar esta marca de productos?"
         nombreItem={marcaAEliminar?.nombre}
         cargando={eliminando}
+        error={errorEliminar}
       />
     </div>
   );

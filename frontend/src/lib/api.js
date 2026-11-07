@@ -26,6 +26,13 @@ async function request(path, { method = "GET", body, isForm = false, auth = fals
   }
 
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem("pizarro_token");
+      localStorage.removeItem("pizarro_usuario");
+      if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin") && !window.location.pathname.includes("/admin/login")) {
+        window.location.href = "/admin/login?expirado=true";
+      }
+    }
     throw new Error(data?.error || "Ocurrió un error al comunicarse con el servidor.");
   }
 

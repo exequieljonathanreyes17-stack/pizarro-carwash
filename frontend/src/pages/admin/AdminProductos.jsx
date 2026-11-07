@@ -21,6 +21,7 @@ export default function AdminProductos() {
   const [guardando, setGuardando] = useState(false);
   const [productoAEliminar, setProductoAEliminar] = useState(null);
   const [eliminando, setEliminando] = useState(false);
+  const [errorEliminar, setErrorEliminar] = useState("");
 
   const totalPaginas = Math.ceil(productos.length / ITEMS_POR_PAGINA) || 1;
   const paginaValida = Math.min(Math.max(1, pagina), totalPaginas);
@@ -66,12 +67,14 @@ export default function AdminProductos() {
   async function confirmarEliminarProducto() {
     if (!productoAEliminar) return;
     setEliminando(true);
+    setErrorEliminar("");
     try {
       await api.del(`/productos/${productoAEliminar.id}`, { auth: true });
-      cargar();
+      setProductos((prev) => prev.filter((p) => p.id !== productoAEliminar.id));
       setProductoAEliminar(null);
+      cargar();
     } catch (err) {
-      setError(err.message || "Error al eliminar producto");
+      setErrorEliminar(err.message || "Error al eliminar producto");
     } finally {
       setEliminando(false);
     }
@@ -154,7 +157,13 @@ export default function AdminProductos() {
                     <button onClick={() => editarProducto(p)} className="mr-3 text-chrome-300 hover:text-electric-400">
                       <Pencil size={16} />
                     </button>
-                    <button onClick={() => setProductoAEliminar(p)} className="text-chrome-300 hover:text-red-400">
+                    <button
+                      onClick={() => {
+                        setErrorEliminar("");
+                        setProductoAEliminar(p);
+                      }}
+                      className="text-chrome-300 hover:text-red-400"
+                    >
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -280,12 +289,16 @@ export default function AdminProductos() {
       {/* Modal de confirmación para eliminar producto */}
       <ModalConfirmar
         abierto={!!productoAEliminar}
-        onCerrar={() => setProductoAEliminar(null)}
+        onCerrar={() => {
+          setProductoAEliminar(null);
+          setErrorEliminar("");
+        }}
         onConfirmar={confirmarEliminarProducto}
         titulo="¿Eliminar producto?"
         mensaje="¿Estás seguro de que deseas eliminar este producto? Se borrará de la lista."
         nombreItem={productoAEliminar?.nombre}
         cargando={eliminando}
+        error={errorEliminar}
       />
     </div>
   );

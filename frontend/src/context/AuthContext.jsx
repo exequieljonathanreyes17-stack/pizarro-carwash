@@ -9,7 +9,20 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const guardado = localStorage.getItem("pizarro_usuario");
-    if (guardado) setUsuario(JSON.parse(guardado));
+    const token = localStorage.getItem("pizarro_token");
+    if (guardado && token) {
+      try {
+        setUsuario(JSON.parse(guardado));
+      } catch (e) {
+        localStorage.removeItem("pizarro_usuario");
+        localStorage.removeItem("pizarro_token");
+        setUsuario(null);
+      }
+    } else {
+      localStorage.removeItem("pizarro_usuario");
+      localStorage.removeItem("pizarro_token");
+      setUsuario(null);
+    }
     setCargando(false);
   }, []);
 
