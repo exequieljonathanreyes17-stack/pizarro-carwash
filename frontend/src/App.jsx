@@ -11,6 +11,7 @@ import AdminLayout from "./pages/admin/AdminLayout.jsx";
 import Panel from "./pages/admin/Panel.jsx";
 import AdminProductos from "./pages/admin/AdminProductos.jsx";
 import AdminServicios from "./pages/admin/AdminServicios.jsx";
+import AdminResultados from "./pages/admin/AdminResultados.jsx";
 import AdminCertificaciones from "./pages/admin/AdminCertificaciones.jsx";
 import AdminMarcas from "./pages/admin/AdminMarcas.jsx";
 import AdminResenas from "./pages/admin/AdminResenas.jsx";
@@ -40,6 +41,7 @@ export default function App() {
         <Route index element={<Panel />} />
         <Route path="productos" element={<AdminProductos />} />
         <Route path="servicios" element={<AdminServicios />} />
+        <Route path="resultados" element={<AdminResultados />} />
         <Route path="certificaciones" element={<AdminCertificaciones />} />
         <Route path="marcas" element={<AdminMarcas />} />
         <Route path="resenas" element={<AdminResenas />} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Package, Wrench, Award, Star } from "lucide-react";
+import { Package, Wrench, Sparkles, Award, Star } from "lucide-react";
 import { api, cache } from "../../lib/api";
 import { SkeletonStats } from "../../components/admin/AdminSkeletons.jsx";
 
@@ -11,12 +11,14 @@ export default function Panel() {
     Promise.all([
       api.get("/productos?todos=true").catch(() => []),
       api.get("/servicios?todos=true").catch(() => []),
+      api.get("/resultados?todos=true").catch(() => []),
       api.get("/certificaciones?todos=true").catch(() => []),
       api.get("/resenas", true).catch(() => []),
-    ]).then(([productos, servicios, certificaciones, resenas]) => {
+    ]).then(([productos, servicios, resultados, certificaciones, resenas]) => {
       const data = {
         productos: productos.length,
         servicios: servicios.length,
+        resultados: resultados.length,
         certificaciones: certificaciones.length,
         resenas: resenas.length,
       };
@@ -30,6 +32,7 @@ export default function Panel() {
   const tarjetas = stats ? [
     { label: "Productos", valor: stats.productos, icon: Package },
     { label: "Servicios", valor: stats.servicios, icon: Wrench },
+    { label: "Resultados / Trabajos", valor: stats.resultados, icon: Sparkles },
     { label: "Certificaciones", valor: stats.certificaciones, icon: Award },
     { label: "Reseñas recibidas", valor: stats.resenas, icon: Star },
   ] : [];

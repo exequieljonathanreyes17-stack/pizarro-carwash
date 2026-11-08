@@ -12,11 +12,19 @@ async function request(path, { method = "GET", body, isForm = false, auth = fals
     if (token) headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    body: isForm ? body : body ? JSON.stringify(body) : undefined,
-  });
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers,
+      body: isForm ? body : body ? JSON.stringify(body) : undefined,
+    });
+  } catch (err) {
+    console.error("[API Network Error]:", err);
+    throw new Error(
+      "No se pudo conectar con el servidor. Verificá que el backend esté activo o que las fotos no sean excesivamente pesadas."
+    );
+  }
 
   let data = null;
   try {
