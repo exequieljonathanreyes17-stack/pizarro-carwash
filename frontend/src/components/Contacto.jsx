@@ -1,4 +1,5 @@
-import { MapPin, Clock, Phone, Instagram, CheckCircle2, MessageCircle } from "lucide-react";
+import { MapPin, Clock, Phone, Instagram, CheckCircle2 } from "lucide-react";
+import IconoWhatsApp from "./IconoWhatsApp.jsx";
 import { linkWhatsApp } from "../lib/whatsapp";
 
 const DIRECCION = "Barrio Alunai, Zona Oeste, La Rioja, Argentina";
@@ -20,8 +21,8 @@ export default function Contacto() {
               <ItemContacto
                 icon={Instagram}
                 label="Instagram"
-                valor="@pizarrocarwash"
-                href="https://instagram.com/pizarrocarwash"
+                valor="@pizarro_carwash"
+                href="https://www.instagram.com/pizarro_carwash/"
               />
             </ul>
 
@@ -31,7 +32,7 @@ export default function Contacto() {
               rel="noreferrer"
               className="btn-primary mt-8 w-full sm:w-auto"
             >
-              <MessageCircle size={18} /> Preguntar por WhatsApp
+              <IconoWhatsApp size={18} /> Preguntar por WhatsApp
             </a>
           </div>
 

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { MapPin, Phone, Instagram, Clock, Car } from "lucide-react";
+import IconoWhatsApp from "./IconoWhatsApp.jsx";
 
 export default function Footer() {
   return (
@@ -54,9 +55,24 @@ export default function Footer() {
               </li>
             </ul>
             
-            <div className="mt-6 flex gap-4">
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-electric-500/10 text-electric-400 transition-all hover:bg-electric-500 hover:text-carbon-950 hover:shadow-neon">
+            <div className="mt-6 flex gap-3">
+              <a
+                href="https://www.instagram.com/pizarro_carwash/"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram de Pizarro Carwash"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-electric-500/10 text-electric-400 transition-all hover:bg-electric-500 hover:text-carbon-950 hover:shadow-neon"
+              >
                 <Instagram size={20} />
+              </a>
+              <a
+                href="https://wa.me/5493804111152"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="WhatsApp de Pizarro Carwash"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#25D366]/15 text-[#25D366] transition-all hover:bg-[#25D366] hover:text-white hover:shadow-neon"
+              >
+                <IconoWhatsApp size={20} />
               </a>
             </div>
           </div>

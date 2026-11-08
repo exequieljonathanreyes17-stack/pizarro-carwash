@@ -1,10 +1,11 @@
 
 import { Link } from "react-router-dom";
-import { Droplets, Sparkles, CarFront, Sofa, Star, Lightbulb, Wrench, ChevronRight, MessageCircle } from "lucide-react";
+import { Droplets, Sparkles, CarFront, Sofa, Star, Lightbulb, Wrench, ChevronRight } from "lucide-react";
 import { slugify } from "../lib/slug";
 import { linkWhatsApp, mensajeConsultaServicio } from "../lib/whatsapp";
 import { uploadUrl } from "../lib/api";
 import Estrellas from "./Estrellas.jsx";
+import IconoWhatsApp from "./IconoWhatsApp.jsx";
 
 const ICONOS = {
   droplets: Droplets,
@@ -125,7 +126,7 @@ export default function TarjetaServicio({ servicio }) {
           rel="noreferrer"
           className="btn-primary flex w-full items-center justify-center gap-2 !py-2.5 shadow-lg shadow-electric-500/10 transition-all hover:shadow-electric-500/30"
         >
-          <MessageCircle size={18} />
+          <IconoWhatsApp size={18} />
           Consultar por WhatsApp
         </a>
       </div>

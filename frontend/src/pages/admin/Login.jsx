@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { LockKeyhole, CheckCircle } from "lucide-react";
+import { LockKeyhole, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function Login() {
@@ -11,6 +11,7 @@ export default function Login() {
   const cambioPassword = searchParams.get("cambioPassword") === "true";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mostrarPassword, setMostrarPassword] = useState(false);
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
 
@@ -68,14 +69,24 @@ export default function Login() {
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-chrome-400">
               Contraseña
             </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input-field"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={mostrarPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input-field pr-10"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setMostrarPassword(!mostrarPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-chrome-400 hover:text-chrome-200 transition-colors"
+                title={mostrarPassword ? "Ocultar contraseña" : "Ver contraseña"}
+              >
+                {mostrarPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           {error && <p className="mb-4 text-sm text-red-400">{error}</p>}

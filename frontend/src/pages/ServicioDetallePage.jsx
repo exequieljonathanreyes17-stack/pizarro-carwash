@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
-  MessageCircle,
   Clock,
   ArrowLeft,
   Send,
@@ -20,6 +19,7 @@ import {
 import Layout from "../components/Layout.jsx";
 import AutoEjemplo from "../components/AutoEjemplo.jsx";
 import Estrellas from "../components/Estrellas.jsx";
+import IconoWhatsApp from "../components/IconoWhatsApp.jsx";
 import { useServicios } from "../hooks/useDatos";
 import { slugify } from "../lib/slug";
 import { obtenerContenidoServicio } from "../data/serviciosContenido";
@@ -257,7 +257,7 @@ export default function ServicioDetallePage() {
                   rel="noreferrer"
                   className="btn-primary mt-4 w-full text-center"
                 >
-                  <MessageCircle size={18} /> Consultar por WhatsApp
+                  <IconoWhatsApp size={18} /> Consultar por WhatsApp
                 </a>
               </div>
             </div>
@@ -334,7 +334,7 @@ export default function ServicioDetallePage() {
                     rel="noreferrer"
                     className="btn-primary mt-5 w-full py-3.5 text-base shadow-neon hover:shadow-cyan-500/50"
                   >
-                    <MessageCircle size={20} /> Consultar por WhatsApp
+                    <IconoWhatsApp size={20} /> Consultar por WhatsApp
                   </a>
 
                   <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-chrome-400">

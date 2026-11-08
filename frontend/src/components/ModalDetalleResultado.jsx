@@ -4,7 +4,6 @@ import {
   SlidersHorizontal,
   Images,
   ExternalLink,
-  MessageCircle,
   Wrench,
   Instagram,
   Video,
@@ -12,6 +11,7 @@ import {
 import ComparadorAntesDespues from "./ComparadorAntesDespues.jsx";
 import GaleriaResultado from "./GaleriaResultado.jsx";
 import { linkWhatsApp } from "../lib/whatsapp";
+import IconoWhatsApp from "./IconoWhatsApp.jsx";
 
 export default function ModalDetalleResultado({ resultado, onClose }) {
   if (!resultado) return null;
@@ -156,7 +156,7 @@ export default function ModalDetalleResultado({ resultado, onClose }) {
             rel="noreferrer"
             className="btn-primary w-full sm:w-auto text-xs py-2.5 px-5"
           >
-            <MessageCircle size={17} /> Consultar por este trabajo
+            <IconoWhatsApp size={17} /> Consultar por este trabajo
           </a>
         </div>
       </div>
