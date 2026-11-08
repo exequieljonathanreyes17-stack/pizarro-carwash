@@ -33,9 +33,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#contacto" className="hover:text-electric-400 transition-colors flex items-center gap-2">
+                <Link to="/contacto" className="hover:text-electric-400 transition-colors flex items-center gap-2">
                   <Phone size={16} /> Contacto
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

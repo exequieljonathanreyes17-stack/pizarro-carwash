@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import ScrollToTop from "./components/ScrollToTop.jsx";
 import Home from "./pages/Home.jsx";
 import ServiciosPage from "./pages/ServiciosPage.jsx";
 import ServicioDetallePage from "./pages/ServicioDetallePage.jsx";
@@ -17,7 +18,9 @@ import RutaProtegida from "./components/RutaProtegida.jsx";
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/servicios" element={<ServiciosPage />} />
       <Route path="/servicios/:slug" element={<ServicioDetallePage />} />
@@ -42,5 +45,6 @@ export default function App() {
         <Route path="resenas" element={<AdminResenas />} />
       </Route>
     </Routes>
+    </>
   );
 }
