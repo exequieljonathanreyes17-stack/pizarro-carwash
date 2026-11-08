@@ -15,7 +15,8 @@ const resenasRoutes = require("./routes/resenas");
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 app.get("/api/health", (req, res) => res.json({ ok: true, servicio: "Pizarro Carwash API" }));
@@ -34,6 +35,8 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Pizarro Carwash API corriendo en http://localhost:${PORT}`);
 });
+server.timeout = 180000; // 3 minutos
+server.keepAliveTimeout = 65000;

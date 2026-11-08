@@ -48,6 +48,7 @@ model Servicio {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   resenas      Resena[]
+  resultados   Resultado[]
 
   @@map("servicio")
 }
@@ -93,15 +94,21 @@ model Marca {
 }
 
 model Resultado {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   titulo        String
-  descripcion   String?  @db.Text
-  imagenAntes   String
-  imagenDespues String
-  orden         Int      @default(0)
-  activo        Boolean  @default(true)
-  createdAt     DateTime @default(now())
+  descripcion   String?   @db.Text
+  servicioId    Int?
+  servicio      Servicio? @relation(fields: [servicioId], references: [id], onDelete: SetNull)
+  imagenAntes   String?   @db.Text
+  imagenDespues String?   @db.Text
+  imagenes      String?   @db.Text // JSON stringificado con URLs de fotos de la galería
+  redSocialUrl  String?   @db.Text // Link opcional a Instagram, Facebook, TikTok
+  orden         Int       @default(0)
+  activo        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
 
+  @@index([servicioId])
   @@map("resultado")
 }
 

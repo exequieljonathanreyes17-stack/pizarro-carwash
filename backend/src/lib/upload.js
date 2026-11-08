@@ -19,7 +19,7 @@ const fileFilter = (req, file, cb) => {
 // No guarda archivos en disco local, evitando llenar el servidor.
 const baseUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // Hasta 10MB
+  limits: { fileSize: 25 * 1024 * 1024 }, // Hasta 25MB por imagen
   fileFilter,
 });
 
@@ -67,7 +67,12 @@ const upload = {
 
     return (req, res, next) => {
       middleware(req, res, async (err) => {
-        if (err) return next(err);
+        if (err) {
+          if (err.code === "LIMIT_FILE_SIZE") {
+            return next(new Error("La imagen es demasiado pesada (máximo 25MB permitidos)."));
+          }
+          return next(err);
+        }
         if (req.file) {
           try {
             await procesarArchivoCloudinary(req.file);
@@ -88,17 +93,25 @@ const upload = {
 
     return (req, res, next) => {
       middleware(req, res, async (err) => {
-        if (err) return next(err);
+        if (err) {
+          if (err.code === "LIMIT_FILE_SIZE") {
+            return next(new Error("Una de las imágenes es demasiado pesada (máximo 25MB por imagen)."));
+          }
+          return next(err);
+        }
         if (req.files) {
           try {
+            const archivos = [];
             for (const campo of Object.keys(req.files)) {
               const arrayArchivos = req.files[campo];
               if (Array.isArray(arrayArchivos)) {
                 for (const f of arrayArchivos) {
-                  await procesarArchivoCloudinary(f);
+                  archivos.push(f);
                 }
               }
             }
+            // Subida en paralelo para acelerar significativamente la carga
+            await Promise.all(archivos.map((f) => procesarArchivoCloudinary(f)));
           } catch (uploadErr) {
             console.error("[Upload] Error al subir imágenes a Cloudinary:", uploadErr);
             return next(
