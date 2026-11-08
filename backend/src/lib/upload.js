@@ -46,6 +46,11 @@ function subirBufferACloudinary(buffer, nombreOriginal = "imagen") {
 // Middleware procesador que sube a Cloudinary
 async function procesarArchivoCloudinary(file) {
   if (!file || !file.buffer) return file;
+  if (!process.env.CLOUDINARY_API_KEY && !process.env.CLOUDINARY_URL) {
+    throw new Error(
+      "Faltan configurar las variables de entorno de Cloudinary (CLOUDINARY_API_KEY, CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_SECRET) en el panel de tu hosting de producción."
+    );
+  }
   console.log(`[Upload] Subiendo archivo "${file.originalname}" (${file.buffer.length} bytes) a Cloudinary...`);
   const res = await subirBufferACloudinary(file.buffer, file.originalname);
   console.log(`[Upload] Subida exitosa a Cloudinary -> ${res.secure_url}`);
