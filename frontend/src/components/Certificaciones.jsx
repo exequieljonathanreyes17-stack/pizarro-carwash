@@ -42,7 +42,13 @@ export default function Certificaciones() {
             <div key={c.id} className="glass-card flex gap-4 rounded-xl p-5">
               <div className="flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-lg bg-electric-500/10 text-electric-400">
                 {c.imagenUrl ? (
-                  <img src={uploadUrl(c.imagenUrl)} alt={c.titulo} className="h-full w-full object-cover" />
+                  <img
+                    src={uploadUrl(c.imagenUrl)}
+                    alt={c.titulo}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 ) : (
                   <Award size={28} />
                 )}

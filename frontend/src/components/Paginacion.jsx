@@ -6,6 +6,8 @@ export default function Paginacion({
   onCambiarPagina,
   totalItems,
   itemsPorPagina = 6,
+  labelItems = "servicios",
+  scrollToId = "seccion-servicios-titulo",
 }) {
   if (totalPaginas <= 1) return null;
 
@@ -14,7 +16,7 @@ export default function Paginacion({
 
   function irAPagina(num) {
     onCambiarPagina(num);
-    const el = document.getElementById("seccion-servicios-titulo");
+    const el = document.getElementById(scrollToId);
     if (el) {
       el.scrollIntoView({ behavior: "smooth" });
     } else {
@@ -28,7 +30,7 @@ export default function Paginacion({
         <p>
           Mostrando <span className="font-semibold text-chrome-100">{inicio}</span> a{" "}
           <span className="font-semibold text-chrome-100">{fin}</span> de{" "}
-          <span className="font-semibold text-chrome-100">{totalItems}</span> servicios
+          <span className="font-semibold text-chrome-100">{totalItems}</span> {labelItems}
         </p>
       )}
 

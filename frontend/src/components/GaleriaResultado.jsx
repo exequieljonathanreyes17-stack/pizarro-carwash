@@ -48,6 +48,8 @@ export default function GaleriaResultado({ imagenes = [], titulo = "", className
                   src={uploadUrl(img)}
                   alt={`Miniatura ${i + 1}`}
                   className="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                 />
 
                 {/* Si es el último visible y hay más fotos, mostrar badge "+N" */}
@@ -68,12 +70,14 @@ export default function GaleriaResultado({ imagenes = [], titulo = "", className
           )}
         </div>
 
-        {/* Foto Principal Ampliada */}
-        <div className="relative group flex-1 h-[340px] sm:h-[440px] md:h-[480px] w-full overflow-hidden rounded-2xl border border-carbon-800 bg-carbon-950/80 shadow-2xl flex items-center justify-center">
+        {/* Foto Principal Ampliada (Se ve completa sin recortar) */}
+        <div className="relative group flex-1 h-[360px] sm:h-[460px] md:h-[520px] w-full overflow-hidden rounded-2xl border border-carbon-800 bg-carbon-950 shadow-2xl flex items-center justify-center p-2">
           <img
             src={imagenPrincipal}
             alt={titulo || "Resultado del trabajo"}
-            className="h-full w-full object-contain md:object-cover transition-transform duration-300"
+            className="h-full w-full object-contain transition-transform duration-300"
+            loading="lazy"
+            decoding="async"
           />
 
           {/* Flecha Anterior */}

@@ -40,12 +40,16 @@ export default function TarjetaServicio({ servicio }) {
               alt="" 
               aria-hidden="true"
               className="absolute inset-0 h-full w-full object-cover blur-md opacity-30 scale-110" 
+              loading="lazy"
+              decoding="async"
             />
             {/* Imagen principal completa, sin recortes ni zoom excesivo */}
             <img 
               src={uploadUrl(servicio.imagenUrl)} 
               alt={servicio.nombre} 
               className="relative z-10 h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105" 
+              loading="lazy"
+              decoding="async"
             />
             {/* Gradiente oscuro sutil sobre la base */}
             <div className="pointer-events-none absolute inset-0 z-20 bg-gradient-to-t from-carbon-950/80 via-transparent to-transparent" />

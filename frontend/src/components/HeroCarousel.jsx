@@ -49,6 +49,8 @@ export default function HeroCarousel() {
             src={slide.imagen}
             alt={slide.alt}
             className="absolute inset-0 h-full w-full object-cover"
+            loading={i === 0 ? "eager" : "lazy"}
+            decoding="async"
           />
           {/* Capas de oscurecimiento para asegurar la legibilidad del texto */}
           <div className="absolute inset-0 bg-carbon-950/70" />

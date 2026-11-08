@@ -44,7 +44,7 @@ export default function ModalDetalleResultado({ resultado, onClose }) {
       onClick={onClose}
     >
       <div
-        className="relative my-auto w-full max-w-4xl overflow-hidden rounded-2xl border border-electric-500/20 bg-carbon-950 p-4 sm:p-7 shadow-2xl"
+        className="relative my-auto w-full max-w-5xl overflow-hidden rounded-2xl border border-electric-500/20 bg-carbon-950 p-4 sm:p-7 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabecera del Modal */}

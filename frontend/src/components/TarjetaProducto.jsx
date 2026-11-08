@@ -6,7 +6,13 @@ export default function TarjetaProducto({ producto }) {
     <div className="glass-card flex flex-col overflow-hidden rounded-xl transition-all duration-300 hover:border-electric-400/60 hover:shadow-neon">
       <div className="flex h-40 items-center justify-center bg-carbon-900">
         {producto.imagenUrl ? (
-          <img src={uploadUrl(producto.imagenUrl)} alt={producto.nombre} className="h-full w-full object-cover" />
+          <img
+            src={uploadUrl(producto.imagenUrl)}
+            alt={producto.nombre}
+            className="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
         ) : (
           <PackageSearch className="text-chrome-400/50" size={40} />
         )}

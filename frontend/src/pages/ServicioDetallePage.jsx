@@ -279,12 +279,16 @@ export default function ServicioDetallePage() {
                         alt=""
                         aria-hidden="true"
                         className="absolute inset-0 h-full w-full object-cover blur-xl opacity-30 scale-125"
+                        loading="lazy"
+                        decoding="async"
                       />
                       {/* Imagen nítida completa sin recortes excesivos */}
                       <img
                         src={uploadUrl(servicio.imagenUrl)}
                         alt={servicio.nombre}
                         className="relative z-10 max-h-[340px] w-full object-contain p-3 drop-shadow-2xl transition-transform duration-300 hover:scale-[1.02]"
+                        loading="lazy"
+                        decoding="async"
                       />
                     </>
                   ) : (

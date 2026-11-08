@@ -31,6 +31,8 @@ export default function Nosotros() {
               src="/images/logo-horizontal.png"
               alt="Logo Pizarro Carwash"
               className="relative z-10 w-full max-w-md rounded-xl border border-electric-500/20 bg-carbon-900/60 p-6"
+              loading="lazy"
+              decoding="async"
             />
           </div>
         </div>

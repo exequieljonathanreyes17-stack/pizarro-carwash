@@ -19,22 +19,24 @@ export default function ComparadorAntesDespues({
     setSliderPos(porcentaje);
   }, []);
 
-  const handleMouseDown = () => setArrastrando(true);
-  const handleMouseUp = () => setArrastrando(false);
+  const handlePointerDown = (e) => {
+    setArrastrando(true);
+    calcularPosicion(e.clientX);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+  };
 
-  const handleMouseMove = (e) => {
+  const handlePointerMove = (e) => {
     if (!arrastrando) return;
     calcularPosicion(e.clientX);
   };
 
-  const handleTouchMove = (e) => {
-    if (e.touches && e.touches[0]) {
-      calcularPosicion(e.touches[0].clientX);
-    }
-  };
-
-  const handleClick = (e) => {
-    calcularPosicion(e.clientX);
+  const handlePointerUp = (e) => {
+    setArrastrando(false);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
   };
 
   const urlAntes = uploadUrl(antes);
@@ -52,7 +54,13 @@ export default function ComparadorAntesDespues({
             <h3 className="font-display text-lg font-bold text-white">{titulo}</h3>
           </div>
         )}
-        <img src={unica} alt={titulo} className="h-[380px] sm:h-[480px] w-full object-cover" />
+        <img
+          src={unica}
+          alt={titulo}
+          className="h-[380px] sm:h-[480px] w-full object-cover"
+          loading="lazy"
+          decoding="async"
+        />
       </div>
     );
   }
@@ -67,70 +75,68 @@ export default function ComparadorAntesDespues({
 
       <div
         ref={containerRef}
-        onClick={handleClick}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseUp}
-        onTouchMove={handleTouchMove}
-        className="relative h-[340px] sm:h-[440px] md:h-[500px] w-full max-w-4xl select-none overflow-hidden rounded-2xl border border-electric-500/20 bg-carbon-950 shadow-2xl cursor-ew-resize"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        className="relative h-[360px] sm:h-[460px] md:h-[520px] w-full max-w-4xl select-none overflow-hidden rounded-2xl border border-carbon-800/80 bg-carbon-950 shadow-2xl cursor-ew-resize touch-none"
       >
-        {/* Imagen DESPUÉS (Base completa a la derecha) */}
+        {/* Imagen DESPUÉS (Fondo completo base de borde a borde) */}
         <img
           src={urlDespues}
           alt="Después del trabajo"
-          className="absolute inset-0 h-full w-full object-cover pointer-events-none"
+          className="absolute inset-0 h-full w-full object-cover pointer-events-none select-none"
           draggable={false}
+          loading="lazy"
+          decoding="async"
         />
 
-        {/* Badge DESPUÉS */}
-        <div className="pointer-events-none absolute top-4 right-4 z-20 rounded-md bg-carbon-950/80 px-3 py-1 text-xs font-bold uppercase tracking-wider text-electric-400 backdrop-blur-md border border-electric-500/30 shadow-lg">
+        {/* Badge DESPUÉS (estilo fiel a la imagen de referencia) */}
+        <div className="pointer-events-none absolute top-3.5 right-3.5 z-20 rounded-md bg-black/60 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-md border border-white/10 shadow-md">
           DESPUÉS
         </div>
 
-        {/* Imagen ANTES (Recortada según el sliderPos a la izquierda) */}
-        <div
-          className="absolute inset-0 overflow-hidden pointer-events-none"
-          style={{ width: `${sliderPos}%` }}
-        >
-          <img
-            src={urlAntes}
-            alt="Antes del trabajo"
-            className="absolute inset-0 h-full w-full object-cover pointer-events-none max-w-none"
-            style={{
-              width: containerRef.current ? `${containerRef.current.offsetWidth}px` : "100%",
-            }}
-            draggable={false}
-          />
+        {/* Imagen ANTES (Misma posición exacta y tamaño con clip-path nítido) */}
+        <img
+          src={urlAntes}
+          alt="Antes del trabajo"
+          className="absolute inset-0 h-full w-full object-cover pointer-events-none select-none"
+          style={{
+            clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`,
+          }}
+          draggable={false}
+          loading="lazy"
+          decoding="async"
+        />
 
-          {/* Badge ANTES */}
-          <div className="pointer-events-none absolute top-4 left-4 z-20 rounded-md bg-carbon-950/80 px-3 py-1 text-xs font-bold uppercase tracking-wider text-chrome-300 backdrop-blur-md border border-white/20 shadow-lg">
-            ANTES
-          </div>
+        {/* Badge ANTES */}
+        <div className="pointer-events-none absolute top-3.5 left-3.5 z-20 rounded-md bg-black/60 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-md border border-white/10 shadow-md">
+          ANTES
         </div>
 
-        {/* Línea divisoria y Manija interactiva */}
+        {/* Línea divisoria central con flechas gemelas ◄ ► (como en la segunda imagen) */}
         <div
-          className="absolute top-0 bottom-0 z-30 flex items-center justify-center -ml-[2px]"
+          className="absolute top-0 bottom-0 z-30 flex items-center justify-center -translate-x-1/2 pointer-events-none"
           style={{ left: `${sliderPos}%` }}
-          onMouseDown={handleMouseDown}
-          onTouchStart={() => setArrastrando(true)}
         >
-          {/* Línea de separación */}
-          <div className="h-full w-[3px] bg-white shadow-[0_0_12px_rgba(34,211,238,0.8)]" />
+          {/* Línea divisoria blanca */}
+          <div className="h-full w-[2px] bg-white drop-shadow-[0_0_4px_rgba(0,0,0,0.8)]" />
 
-          {/* Botón central con flechas */}
-          <div className="absolute flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-carbon-950/90 text-white shadow-neon backdrop-blur-md transition-transform duration-150 hover:scale-110 active:scale-95">
+          {/* Flechas integradas directamente sobre la línea */}
+          <div className="absolute flex items-center justify-center gap-1 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
             <svg
-              className="h-5 w-5 fill-current text-electric-300"
+              className="h-4 w-4 fill-white -mr-1.5"
               viewBox="0 0 24 24"
             >
-              <path d="M8.5 7l-5 5 5 5v-10zm7 0v10l5-5-5-5z" />
+              <path d="M15 19l-7-7 7-7v14z" />
+            </svg>
+            <svg
+              className="h-4 w-4 fill-white -ml-1.5"
+              viewBox="0 0 24 24"
+            >
+              <path d="M9 5l7 7-7 7V5z" />
             </svg>
           </div>
-        </div>
-
-        {/* Indicador de ayuda en la parte inferior */}
-        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 z-20 rounded-full bg-carbon-950/75 px-3 py-1 text-[11px] font-medium text-chrome-300 backdrop-blur-md border border-white/10">
-          Deslizá a los lados para comparar
         </div>
       </div>
     </div>

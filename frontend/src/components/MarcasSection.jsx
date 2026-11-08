@@ -23,7 +23,13 @@ export default function MarcasSection() {
         {marcas.map((m) => (
           <div key={m.id} className="flex flex-col items-center gap-2 opacity-80 transition-opacity hover:opacity-100">
             {m.logoUrl ? (
-              <img src={uploadUrl(m.logoUrl)} alt={m.nombre} className="h-10 w-auto object-contain grayscale" />
+              <img
+                src={uploadUrl(m.logoUrl)}
+                alt={m.nombre}
+                className="h-10 w-auto object-contain grayscale"
+                loading="lazy"
+                decoding="async"
+              />
             ) : (
               <Award className="text-chrome-400" size={28} />
             )}
