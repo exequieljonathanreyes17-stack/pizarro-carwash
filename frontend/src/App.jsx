@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop.jsx";
 import Home from "./pages/Home.jsx";
@@ -19,6 +20,12 @@ import AdminConfiguracion from "./pages/admin/AdminConfiguracion.jsx";
 import RutaProtegida from "./components/RutaProtegida.jsx";
 
 export default function App() {
+  useEffect(() => {
+    // Precalentamiento silencioso del backend para mitigar cold starts en Render
+    const baseApi = import.meta.env.VITE_API_URL || "/api";
+    fetch(`${baseApi}/health`).catch(() => {});
+  }, []);
+
   return (
     <>
       <ScrollToTop />

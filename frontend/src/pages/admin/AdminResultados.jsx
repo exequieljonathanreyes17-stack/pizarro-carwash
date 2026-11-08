@@ -20,62 +20,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
+import { optimizarImagenParaWeb } from "../../lib/imageOptimizer";
 import Paginacion from "../../components/admin/Paginacion.jsx";
 import ModalConfirmar from "../../components/admin/ModalConfirmar.jsx";
 import ModalDetalleResultado from "../../components/ModalDetalleResultado.jsx";
 
 const ITEMS_POR_PAGINA = 6;
-
-async function optimizarImagenSiEsGrande(file, maxAncho = 1920, calidad = 0.85) {
-  if (!file || !file.type.startsWith("image/") || file.size < 1.5 * 1024 * 1024) {
-    return file;
-  }
-  if (file.type === "image/svg+xml" || file.type === "image/gif") {
-    return file;
-  }
-
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let ancho = img.width;
-        let alto = img.height;
-
-        if (ancho > maxAncho) {
-          alto = Math.round((alto * maxAncho) / ancho);
-          ancho = maxAncho;
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = ancho;
-        canvas.height = alto;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, ancho, alto);
-
-        canvas.toBlob(
-          (blob) => {
-            if (blob && blob.size < file.size) {
-              const optimizado = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
-                type: "image/jpeg",
-                lastModified: Date.now(),
-              });
-              resolve(optimizado);
-            } else {
-              resolve(file);
-            }
-          },
-          "image/jpeg",
-          calidad
-        );
-      };
-      img.onerror = () => resolve(file);
-      img.src = e.target.result;
-    };
-    reader.onerror = () => resolve(file);
-    reader.readAsDataURL(file);
-  });
-}
 
 const FORM_VACIO = {
   titulo: "",
@@ -100,6 +50,7 @@ export default function AdminResultados() {
   const [editandoId, setEditandoId] = useState(null);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [estadoSubida, setEstadoSubida] = useState("");
   const [error, setError] = useState("");
 
   // Archivos seleccionados localmente
@@ -198,11 +149,15 @@ export default function AdminResultados() {
     });
   }
 
-  // Archivos Antes / Después
+  // Archivos Antes / Después con pre-optimización en segundo plano
   function handleAntesChange(e) {
     const file = e.target.files?.[0];
     if (file) {
       setArchivoAntes(file);
+      // Optimizar en background mientras completa el formulario
+      optimizarImagenParaWeb(file).then((opt) => {
+        if (opt) setArchivoAntes(opt);
+      });
     }
   }
 
@@ -210,15 +165,19 @@ export default function AdminResultados() {
     const file = e.target.files?.[0];
     if (file) {
       setArchivoDespues(file);
+      // Optimizar en background mientras completa el formulario
+      optimizarImagenParaWeb(file).then((opt) => {
+        if (opt) setArchivoDespues(opt);
+      });
     }
   }
 
-  // Archivos de Galería múltiple
+  // Archivos de Galería múltiple con pre-optimización en segundo plano
   function handleGaleriaChange(e) {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    // Crear previews
+    // Crear previews de inmediato (0ms) para respuesta visual instantánea
     const newPreviews = files.map((f) => ({
       file: f,
       url: URL.createObjectURL(f),
@@ -226,6 +185,18 @@ export default function AdminResultados() {
 
     setArchivosGaleria((prev) => [...prev, ...files]);
     setPreviewsGaleria((prev) => [...prev, ...newPreviews]);
+
+    // Pre-comprimir en segundo plano (reduce de 10MB a ~180KB cada foto antes de enviar)
+    Promise.all(files.map((f) => optimizarImagenParaWeb(f))).then((optFiles) => {
+      setArchivosGaleria((prev) => {
+        return prev.map((f) => {
+          const match = optFiles.find(
+            (opt) => opt && (opt.name === f.name || opt.name === f.name.replace(/\.[^/.]+$/, ".jpg"))
+          );
+          return match || f;
+        });
+      });
+    });
   }
 
   function quitarArchivoGaleria(index) {
@@ -339,6 +310,7 @@ export default function AdminResultados() {
     }
 
     setGuardando(true);
+    setEstadoSubida("Optimizando imágenes para la web...");
     try {
       const data = new FormData();
       data.append("titulo", form.titulo.trim());
@@ -348,11 +320,11 @@ export default function AdminResultados() {
       data.append("orden", form.orden);
       data.append("activo", form.activo);
 
-      // Optimizar imágenes si son de alta resolución (ej. fotos de celulares de 10MB+)
-      const antesParaSubir = archivoAntes ? await optimizarImagenSiEsGrande(archivoAntes) : null;
-      const despuesParaSubir = archivoDespues ? await optimizarImagenSiEsGrande(archivoDespues) : null;
+      // Optimizar imágenes si aún no fueron pre-comprimidas
+      const antesParaSubir = archivoAntes ? await optimizarImagenParaWeb(archivoAntes) : null;
+      const despuesParaSubir = archivoDespues ? await optimizarImagenParaWeb(archivoDespues) : null;
       const galeriaParaSubir = await Promise.all(
-        archivosGaleria.map((f) => optimizarImagenSiEsGrande(f))
+        archivosGaleria.map((f) => optimizarImagenParaWeb(f))
       );
 
       // Antes y Después
@@ -376,12 +348,16 @@ export default function AdminResultados() {
         data.append("imagenes", file);
       }
 
+      const totalFotosNuevas = (antesParaSubir ? 1 : 0) + (despuesParaSubir ? 1 : 0) + galeriaParaSubir.length;
+      setEstadoSubida(totalFotosNuevas > 0 ? `Subiendo ${totalFotosNuevas} foto${totalFotosNuevas > 1 ? "s" : ""} a la nube...` : "Guardando cambios...");
+
       if (editandoId) {
         await api.put(`/resultados/${editandoId}`, data, { isForm: true, auth: true });
       } else {
         await api.post("/resultados", data, { isForm: true, auth: true });
       }
 
+      setEstadoSubida("¡Completado!");
       cache.clear();
       setMostrarForm(false);
       cargarDatos();
@@ -390,6 +366,7 @@ export default function AdminResultados() {
       setError(err.message || "Error al guardar el resultado.");
     } finally {
       setGuardando(false);
+      setEstadoSubida("");
     }
   }
 
@@ -1066,9 +1043,16 @@ export default function AdminResultados() {
                 <button
                   type="submit"
                   disabled={guardando}
-                  className="btn-primary !px-5 !py-2 text-sm"
+                  className="btn-primary !px-5 !py-2 text-sm flex items-center gap-2"
                 >
-                  {guardando ? "Subiendo a Cloudinary..." : editandoId ? "Guardar cambios" : "Publicar resultado"}
+                  {guardando && (
+                    <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  )}
+                  {guardando
+                    ? (estadoSubida || "Guardando...")
+                    : editandoId
+                    ? "Guardar cambios"
+                    : "Publicar resultado"}
                 </button>
               </div>
             </form>

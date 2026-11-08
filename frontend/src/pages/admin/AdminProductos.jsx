@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
+import { optimizarImagenParaWeb } from "../../lib/imageOptimizer";
 import { SkeletonProductos } from "../../components/admin/AdminSkeletons.jsx";
 import Paginacion from "../../components/admin/Paginacion.jsx";
 import ModalConfirmar from "../../components/admin/ModalConfirmar.jsx";
@@ -92,7 +93,10 @@ export default function AdminProductos() {
     data.append("categoria", form.categoria);
     data.append("destacado", form.destacado);
     data.append("activo", form.activo);
-    if (imagen) data.append("imagen", imagen);
+    if (imagen) {
+      const imgOpt = await optimizarImagenParaWeb(imagen);
+      data.append("imagen", imgOpt);
+    }
 
     try {
       if (editandoId) {

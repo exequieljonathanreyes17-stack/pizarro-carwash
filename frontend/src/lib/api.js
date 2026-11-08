@@ -48,17 +48,57 @@ async function request(path, { method = "GET", body, isForm = false, auth = fals
 }
 
 const memCache = new Map();
+const CACHE_PREFIX = "pizarro_cache_";
+const DEFAULT_TTL_MS = 10 * 60 * 1000; // 10 minutos de caché en el cliente
 
 export const cache = {
-  get: (key) => memCache.get(key),
-  set: (key, val) => memCache.set(key, val),
-  clear: (prefix) => {
-    if (!prefix) memCache.clear();
-    else {
-      for (const k of memCache.keys()) {
-        if (k.startsWith(prefix)) memCache.delete(k);
+  get: (key) => {
+    // 1. Memoria rápida (microsegundos)
+    if (memCache.has(key)) return memCache.get(key);
+
+    // 2. Persistencia en sessionStorage para navegación y recargas instantáneas (0ms)
+    try {
+      if (typeof window !== "undefined" && window.sessionStorage) {
+        const raw = sessionStorage.getItem(`${CACHE_PREFIX}${key}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.exp && parsed.exp > Date.now()) {
+            memCache.set(key, parsed.data);
+            return parsed.data;
+          } else {
+            sessionStorage.removeItem(`${CACHE_PREFIX}${key}`);
+          }
+        }
       }
-    }
+    } catch (e) {}
+
+    return null;
+  },
+  set: (key, val, ttlMs = DEFAULT_TTL_MS) => {
+    memCache.set(key, val);
+    try {
+      if (typeof window !== "undefined" && window.sessionStorage) {
+        sessionStorage.setItem(
+          `${CACHE_PREFIX}${key}`,
+          JSON.stringify({ data: val, exp: Date.now() + ttlMs })
+        );
+      }
+    } catch (e) {}
+  },
+  clear: (prefix) => {
+    memCache.clear();
+    try {
+      if (typeof window !== "undefined" && window.sessionStorage) {
+        const keys = Object.keys(sessionStorage);
+        for (const k of keys) {
+          if (k.startsWith(CACHE_PREFIX)) {
+            if (!prefix || k.includes(prefix)) {
+              sessionStorage.removeItem(k);
+            }
+          }
+        }
+      }
+    } catch (e) {}
   },
 };
 
@@ -83,7 +123,17 @@ export const api = {
 
 export function uploadUrl(pathOrUrl) {
   if (!pathOrUrl) return null;
-  if (pathOrUrl.startsWith("http")) return pathOrUrl;
+  if (pathOrUrl.startsWith("http")) {
+    // Si la imagen proviene de Cloudinary, inyectar transformaciones automáticas de CDN Edge:
+    // f_auto: entrega automáticamente WebP/AVIF según el navegador del usuario
+    // q_auto: comprime con algoritmo perceptivo reduciendo hasta un 70% el peso sin pérdida visible
+    if (pathOrUrl.includes("res.cloudinary.com") && pathOrUrl.includes("/upload/")) {
+      if (!pathOrUrl.includes("/f_auto") && !pathOrUrl.includes("/q_auto")) {
+        return pathOrUrl.replace("/upload/", "/upload/f_auto,q_auto/");
+      }
+    }
+    return pathOrUrl;
+  }
   const apiHost = import.meta.env.VITE_API_HOST || "";
   return `${apiHost}${pathOrUrl}`;
 }

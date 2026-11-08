@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, X, Award, Upload } from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
+import { optimizarImagenParaWeb } from "../../lib/imageOptimizer";
 import { SkeletonCards } from "../../components/admin/AdminSkeletons.jsx";
 import ModalConfirmar from "../../components/admin/ModalConfirmar.jsx";
 
@@ -93,7 +94,10 @@ export default function AdminCertificaciones() {
         data.append(k, v);
       }
     });
-    if (imagen) data.append("imagen", imagen);
+    if (imagen) {
+      const imgOpt = await optimizarImagenParaWeb(imagen);
+      data.append("imagen", imgOpt);
+    }
 
     try {
       if (editandoId) {
