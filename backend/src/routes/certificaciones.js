@@ -2,6 +2,7 @@ const express = require("express");
 const prisma = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
 const upload = require("../lib/upload");
+const { obtenerUrlImagen } = upload;
 
 const router = express.Router();
 
@@ -19,7 +20,7 @@ router.post("/", requireAuth, upload.single("imagen"), async (req, res) => {
   if (!nombreEmpleado || !titulo) {
     return res.status(400).json({ error: "Faltan campos obligatorios." });
   }
-  const imagenUrl = req.file ? `/uploads/${req.file.filename}` : req.body.imagenUrl || null;
+  const imagenUrl = obtenerUrlImagen(req.file, req.body.imagenUrl);
 
   const certificacion = await prisma.certificacion.create({
     data: {
@@ -48,7 +49,7 @@ router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
   if (descripcion !== undefined) data.descripcion = descripcion;
   if (orden !== undefined) data.orden = Number(orden);
   if (activo !== undefined) data.activo = activo === "true" || activo === true;
-  if (req.file) data.imagenUrl = `/uploads/${req.file.filename}`;
+  if (req.file) data.imagenUrl = obtenerUrlImagen(req.file);
   else if (imagenUrl !== undefined) data.imagenUrl = imagenUrl;
 
   try {

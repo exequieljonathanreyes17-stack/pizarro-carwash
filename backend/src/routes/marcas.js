@@ -2,6 +2,7 @@ const express = require("express");
 const prisma = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
 const upload = require("../lib/upload");
+const { obtenerUrlImagen } = upload;
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.post("/", requireAuth, upload.single("logo"), async (req, res) => {
   const { nombre, orden, activo, logoUrl } = req.body;
   if (!nombre) return res.status(400).json({ error: "El nombre es obligatorio." });
 
-  const url = req.file ? `/uploads/${req.file.filename}` : logoUrl || null;
+  const url = obtenerUrlImagen(req.file, logoUrl);
 
   const marca = await prisma.marca.create({
     data: {

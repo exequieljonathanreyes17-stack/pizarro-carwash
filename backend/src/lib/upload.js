@@ -1,30 +1,133 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const cloudinary = require("./cloudinary");
+
+const estaConfiguradoCloudinary = Boolean(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
 
 const uploadDir = path.join(__dirname, "..", "..", "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const nombre = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, nombre);
-  },
+// Filtro de extensiones permitidas
+const fileFilter = (req, file, cb) => {
+  const permitidos = [".jpg", ".jpeg", ".png", ".webp", ".svg", ".avif"];
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (permitidos.includes(ext)) cb(null, true);
+  else cb(new Error("Formato de imagen no permitido (solo JPG, PNG, WEBP, SVG, AVIF)"));
+};
+
+// Almacenamiento: en memoria si se usa Cloudinary, en disco local como respaldo
+const storage = estaConfiguradoCloudinary
+  ? multer.memoryStorage()
+  : multer.diskStorage({
+      destination: (req, file, cb) => cb(null, uploadDir),
+      filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        const nombre = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+        cb(null, nombre);
+      },
+    });
+
+const baseUpload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // Hasta 10MB
+  fileFilter,
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const permitidos = [".jpg", ".jpeg", ".png", ".webp"];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (permitidos.includes(ext)) cb(null, true);
-    else cb(new Error("Formato de imagen no permitido"));
+// Función para subir buffer a Cloudinary
+function subirBufferACloudinary(buffer) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "pizarro-carwash",
+        resource_type: "image",
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(buffer);
+  });
+}
+
+// Middleware procesador que sube a Cloudinary si aplica
+async function procesarArchivoCloudinary(file) {
+  if (!file || !file.buffer) return file;
+  const res = await subirBufferACloudinary(file.buffer);
+  file.secure_url = res.secure_url;
+  file.path = res.secure_url;
+  file.url = res.secure_url;
+  file.filename = res.public_id;
+  return file;
+}
+
+const upload = {
+  single(campo) {
+    const middleware = baseUpload.single(campo);
+    if (!estaConfiguradoCloudinary) return middleware;
+
+    return (req, res, next) => {
+      middleware(req, res, async (err) => {
+        if (err) return next(err);
+        if (req.file) {
+          try {
+            await procesarArchivoCloudinary(req.file);
+          } catch (uploadErr) {
+            console.error("Error al subir imagen a Cloudinary:", uploadErr);
+            return next(new Error("No se pudo subir la imagen a la nube (Cloudinary). Verifique la conexión."));
+          }
+        }
+        next();
+      });
+    };
   },
-});
+
+  fields(campos) {
+    const middleware = baseUpload.fields(campos);
+    if (!estaConfiguradoCloudinary) return middleware;
+
+    return (req, res, next) => {
+      middleware(req, res, async (err) => {
+        if (err) return next(err);
+        if (req.files) {
+          try {
+            for (const campo of Object.keys(req.files)) {
+              const arrayArchivos = req.files[campo];
+              if (Array.isArray(arrayArchivos)) {
+                for (const f of arrayArchivos) {
+                  await procesarArchivoCloudinary(f);
+                }
+              }
+            }
+          } catch (uploadErr) {
+            console.error("Error al subir imágenes a Cloudinary:", uploadErr);
+            return next(new Error("No se pudo subir las imágenes a la nube (Cloudinary). Verifique la conexión."));
+          }
+        }
+        next();
+      });
+    };
+  },
+};
+
+function obtenerUrlImagen(file, fallback = null) {
+  if (!file) return fallback || null;
+  if (file.secure_url) return file.secure_url;
+  if (file.path && file.path.startsWith("http")) return file.path;
+  if (file.filename) {
+    if (file.filename.startsWith("http")) return file.filename;
+    return `/uploads/${file.filename}`;
+  }
+  return fallback || null;
+}
+
+upload.obtenerUrlImagen = obtenerUrlImagen;
 
 module.exports = upload;

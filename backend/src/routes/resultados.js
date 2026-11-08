@@ -2,6 +2,7 @@ const express = require("express");
 const prisma = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
 const upload = require("../lib/upload");
+const { obtenerUrlImagen } = upload;
 
 const router = express.Router();
 
@@ -25,12 +26,8 @@ router.post(
     const { titulo, descripcion, orden, activo, imagenAntes, imagenDespues } = req.body;
     if (!titulo) return res.status(400).json({ error: "El título es obligatorio." });
 
-    const antesUrl = req.files?.antes?.[0]
-      ? `/uploads/${req.files.antes[0].filename}`
-      : imagenAntes;
-    const despuesUrl = req.files?.despues?.[0]
-      ? `/uploads/${req.files.despues[0].filename}`
-      : imagenDespues;
+    const antesUrl = obtenerUrlImagen(req.files?.antes?.[0], imagenAntes);
+    const despuesUrl = obtenerUrlImagen(req.files?.despues?.[0], imagenDespues);
 
     if (!antesUrl || !despuesUrl) {
       return res.status(400).json({ error: "Se necesitan imagen de antes y después." });
