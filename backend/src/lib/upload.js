@@ -1,55 +1,30 @@
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
 require("dotenv").config({ path: path.resolve(__dirname, "..", "..", ".env") });
 require("dotenv").config();
 const cloudinary = require("./cloudinary");
-
-const estaConfiguradoCloudinary = Boolean(
-  process.env.CLOUDINARY_CLOUD_NAME &&
-  process.env.CLOUDINARY_API_KEY &&
-  process.env.CLOUDINARY_API_SECRET
-);
-
-if (estaConfiguradoCloudinary) {
-  console.log(`[Upload] Cloudinary configurado y activo en cuenta: ${process.env.CLOUDINARY_CLOUD_NAME}`);
-} else {
-  console.warn("[Upload] ATENCIÓN: Credenciales de Cloudinary no encontradas, usando almacenamiento local.");
-}
-
-const uploadDir = path.join(__dirname, "..", "..", "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
 
 // Filtro de extensiones permitidas
 const fileFilter = (req, file, cb) => {
   const permitidos = [".jpg", ".jpeg", ".png", ".webp", ".svg", ".avif"];
   const ext = path.extname(file.originalname).toLowerCase();
-  if (permitidos.includes(ext)) cb(null, true);
-  else cb(new Error("Formato de imagen no permitido (solo JPG, PNG, WEBP, SVG, AVIF)"));
+  if (permitidos.includes(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Formato de imagen no permitido (solo JPG, PNG, WEBP, SVG, AVIF)"));
+  }
 };
 
-// Almacenamiento: en memoria si se usa Cloudinary, en disco local como respaldo
-const storage = estaConfiguradoCloudinary
-  ? multer.memoryStorage()
-  : multer.diskStorage({
-      destination: (req, file, cb) => cb(null, uploadDir),
-      filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        const nombre = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-        cb(null, nombre);
-      },
-    });
-
+// Almacenamiento 100% en memoria para streaming directo a Cloudinary
+// No guarda archivos en disco local, evitando llenar el servidor.
 const baseUpload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // Hasta 10MB
   fileFilter,
 });
 
-// Función para subir buffer a Cloudinary
-function subirBufferACloudinary(buffer) {
+// Función para subir buffer directamente a Cloudinary
+function subirBufferACloudinary(buffer, nombreOriginal = "imagen") {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -57,7 +32,10 @@ function subirBufferACloudinary(buffer) {
         resource_type: "image",
       },
       (error, result) => {
-        if (error) return reject(error);
+        if (error) {
+          console.error("[Cloudinary Stream Error]:", error);
+          return reject(error);
+        }
         resolve(result);
       }
     );
@@ -65,10 +43,12 @@ function subirBufferACloudinary(buffer) {
   });
 }
 
-// Middleware procesador que sube a Cloudinary si aplica
+// Middleware procesador que sube a Cloudinary
 async function procesarArchivoCloudinary(file) {
   if (!file || !file.buffer) return file;
-  const res = await subirBufferACloudinary(file.buffer);
+  console.log(`[Upload] Subiendo archivo "${file.originalname}" (${file.buffer.length} bytes) a Cloudinary...`);
+  const res = await subirBufferACloudinary(file.buffer, file.originalname);
+  console.log(`[Upload] Subida exitosa a Cloudinary -> ${res.secure_url}`);
   file.secure_url = res.secure_url;
   file.path = res.secure_url;
   file.url = res.secure_url;
@@ -79,7 +59,6 @@ async function procesarArchivoCloudinary(file) {
 const upload = {
   single(campo) {
     const middleware = baseUpload.single(campo);
-    if (!estaConfiguradoCloudinary) return middleware;
 
     return (req, res, next) => {
       middleware(req, res, async (err) => {
@@ -88,8 +67,10 @@ const upload = {
           try {
             await procesarArchivoCloudinary(req.file);
           } catch (uploadErr) {
-            console.error("Error al subir imagen a Cloudinary:", uploadErr);
-            return next(new Error("No se pudo subir la imagen a la nube (Cloudinary). Verifique la conexión."));
+            console.error("[Upload] Error al subir imagen a Cloudinary:", uploadErr);
+            return next(
+              new Error(`Error al subir la imagen a Cloudinary: ${uploadErr.message || "Fallo en la nube"}`)
+            );
           }
         }
         next();
@@ -99,7 +80,6 @@ const upload = {
 
   fields(campos) {
     const middleware = baseUpload.fields(campos);
-    if (!estaConfiguradoCloudinary) return middleware;
 
     return (req, res, next) => {
       middleware(req, res, async (err) => {
@@ -115,8 +95,10 @@ const upload = {
               }
             }
           } catch (uploadErr) {
-            console.error("Error al subir imágenes a Cloudinary:", uploadErr);
-            return next(new Error("No se pudo subir las imágenes a la nube (Cloudinary). Verifique la conexión."));
+            console.error("[Upload] Error al subir imágenes a Cloudinary:", uploadErr);
+            return next(
+              new Error(`Error al subir las imágenes a Cloudinary: ${uploadErr.message || "Fallo en la nube"}`)
+            );
           }
         }
         next();
@@ -129,10 +111,7 @@ function obtenerUrlImagen(file, fallback = null) {
   if (!file) return fallback || null;
   if (file.secure_url) return file.secure_url;
   if (file.path && file.path.startsWith("http")) return file.path;
-  if (file.filename) {
-    if (file.filename.startsWith("http")) return file.filename;
-    return `/uploads/${file.filename}`;
-  }
+  if (file.filename && file.filename.startsWith("http")) return file.filename;
   return fallback || null;
 }
 
