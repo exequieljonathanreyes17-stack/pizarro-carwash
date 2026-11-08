@@ -40,8 +40,27 @@ export function AuthProvider({ children }) {
     setUsuario(null);
   }
 
+  function actualizarUsuario(nuevoUsuario, nuevoToken) {
+    if (nuevoToken) {
+      localStorage.setItem("pizarro_token", nuevoToken);
+    }
+    if (nuevoUsuario) {
+      localStorage.setItem("pizarro_usuario", JSON.stringify(nuevoUsuario));
+      setUsuario(nuevoUsuario);
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ usuario, cargando, login, logout, isAuthenticated: !!usuario }}>
+    <AuthContext.Provider
+      value={{
+        usuario,
+        cargando,
+        login,
+        logout,
+        actualizarUsuario,
+        isAuthenticated: !!usuario,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

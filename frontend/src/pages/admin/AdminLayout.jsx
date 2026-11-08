@@ -8,6 +8,7 @@ import {
   Award,
   Star,
   Tags,
+  Settings,
   LogOut,
   ExternalLink,
   Menu,
@@ -23,6 +24,7 @@ const ITEMS = [
   { to: "/admin/certificaciones", label: "Certificaciones", icon: Award },
   { to: "/admin/marcas", label: "Marcas", icon: Tags },
   { to: "/admin/resenas", label: "Reseñas", icon: Star },
+  { to: "/admin/configuracion", label: "Configuración", icon: Settings },
 ];
 
 export default function AdminLayout() {

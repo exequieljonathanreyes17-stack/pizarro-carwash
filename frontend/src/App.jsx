@@ -15,6 +15,7 @@ import AdminResultados from "./pages/admin/AdminResultados.jsx";
 import AdminCertificaciones from "./pages/admin/AdminCertificaciones.jsx";
 import AdminMarcas from "./pages/admin/AdminMarcas.jsx";
 import AdminResenas from "./pages/admin/AdminResenas.jsx";
+import AdminConfiguracion from "./pages/admin/AdminConfiguracion.jsx";
 import RutaProtegida from "./components/RutaProtegida.jsx";
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="certificaciones" element={<AdminCertificaciones />} />
         <Route path="marcas" element={<AdminMarcas />} />
         <Route path="resenas" element={<AdminResenas />} />
+        <Route path="configuracion" element={<AdminConfiguracion />} />
       </Route>
     </Routes>
     </>

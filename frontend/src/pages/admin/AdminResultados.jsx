@@ -15,6 +15,9 @@ import {
   Check,
   AlertCircle,
   Video,
+  Star,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
 import Paginacion from "../../components/admin/Paginacion.jsx";
@@ -239,6 +242,81 @@ export default function AdminResultados() {
       ...prev,
       imagenesExistentes: prev.imagenesExistentes.filter((_, i) => i !== index),
     }));
+  }
+
+  // Reordenar fotos nuevas por subir (elegir cuál va primero / portada)
+  function moverAlPrincipioNuevas(index) {
+    if (index === 0) return;
+    setArchivosGaleria((prev) => {
+      const arr = [...prev];
+      const [item] = arr.splice(index, 1);
+      arr.unshift(item);
+      return arr;
+    });
+    setPreviewsGaleria((prev) => {
+      const arr = [...prev];
+      const [item] = arr.splice(index, 1);
+      arr.unshift(item);
+      return arr;
+    });
+  }
+
+  function moverIzquierdaNuevas(index) {
+    if (index === 0) return;
+    setArchivosGaleria((prev) => {
+      const arr = [...prev];
+      [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+      return arr;
+    });
+    setPreviewsGaleria((prev) => {
+      const arr = [...prev];
+      [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+      return arr;
+    });
+  }
+
+  function moverDerechaNuevas(index) {
+    setArchivosGaleria((prev) => {
+      if (index >= prev.length - 1) return prev;
+      const arr = [...prev];
+      [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+      return arr;
+    });
+    setPreviewsGaleria((prev) => {
+      if (index >= prev.length - 1) return prev;
+      const arr = [...prev];
+      [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+      return arr;
+    });
+  }
+
+  // Reordenar fotos ya guardadas en el servidor
+  function moverAlPrincipioExistentes(index) {
+    if (index === 0) return;
+    setForm((prev) => {
+      const arr = [...prev.imagenesExistentes];
+      const [item] = arr.splice(index, 1);
+      arr.unshift(item);
+      return { ...prev, imagenesExistentes: arr };
+    });
+  }
+
+  function moverIzquierdaExistentes(index) {
+    if (index === 0) return;
+    setForm((prev) => {
+      const arr = [...prev.imagenesExistentes];
+      [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+      return { ...prev, imagenesExistentes: arr };
+    });
+  }
+
+  function moverDerechaExistentes(index) {
+    setForm((prev) => {
+      if (index >= prev.imagenesExistentes.length - 1) return prev;
+      const arr = [...prev.imagenesExistentes];
+      [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+      return { ...prev, imagenesExistentes: arr };
+    });
   }
 
   async function handleSubmit(e) {
@@ -764,7 +842,7 @@ export default function AdminResultados() {
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-chrome-400">
-                  Podés subir varias fotos en alta resolución (exterior, interior, llantas, ópticas, motor). Se mostrarán con selector lateral estilo concesionario.
+                  Podés subir varias fotos en alta resolución (exterior, interior, llantas, ópticas). La foto marcada con <strong className="text-amber-400 font-semibold">1ª Portada</strong> es la que se mostrará como imagen principal. Podés cambiar el orden con las flechas o tocando el botón <strong className="text-amber-400 font-semibold">1ª</strong>.
                 </p>
 
                 <input
@@ -777,26 +855,84 @@ export default function AdminResultados() {
                 />
 
                 {/* Previews de la galería */}
-                <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
+                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
                   {/* Existentes en el servidor */}
                   {form.imagenesExistentes.map((imgUrl, idx) => (
                     <div
                       key={`existente-${idx}`}
-                      className="group relative h-20 rounded-lg overflow-hidden border border-carbon-700 bg-carbon-950"
+                      className={`group relative h-28 sm:h-32 rounded-xl overflow-hidden border ${
+                        idx === 0 ? "border-amber-400 ring-2 ring-amber-400/30" : "border-carbon-700"
+                      } bg-carbon-950 flex flex-col justify-between`}
                     >
                       <img
                         src={uploadUrl(imgUrl)}
                         alt={`Existente ${idx + 1}`}
-                        className="h-full w-full object-cover"
+                        className="absolute inset-0 h-full w-full object-cover"
                       />
-                      <button
-                        type="button"
-                        onClick={() => quitarImagenExistente(idx)}
-                        className="absolute top-1 right-1 rounded-md bg-black/80 p-1 text-white hover:bg-red-500 transition-colors"
-                        title="Eliminar de la galería"
-                      >
-                        <X size={12} />
-                      </button>
+
+                      {/* Header de la tarjeta */}
+                      <div className="relative z-10 flex items-center justify-between p-1.5 bg-gradient-to-b from-black/85 via-black/40 to-transparent">
+                        {idx === 0 ? (
+                          <span className="flex items-center gap-1 rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-black text-black shadow">
+                            <Star size={10} className="fill-black" /> 1ª Portada
+                          </span>
+                        ) : (
+                          <span className="rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-bold text-chrome-300 border border-carbon-700">
+                            {idx + 1}º
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => quitarImagenExistente(idx)}
+                          className="rounded-md bg-black/80 p-1 text-white hover:bg-red-500 transition-colors"
+                          title="Eliminar de la galería"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+
+                      {/* Footer con controles de orden */}
+                      <div className="relative z-10 flex items-center justify-between gap-1 p-1 bg-gradient-to-t from-black/95 via-black/80 to-transparent">
+                        <button
+                          type="button"
+                          onClick={() => moverIzquierdaExistentes(idx)}
+                          disabled={idx === 0}
+                          className={`rounded p-1 text-xs transition-colors ${
+                            idx === 0
+                              ? "opacity-20 cursor-not-allowed text-chrome-600"
+                              : "text-white bg-carbon-800/80 hover:bg-electric-500 hover:text-black"
+                          }`}
+                          title="Mover hacia la izquierda"
+                        >
+                          <ChevronLeft size={13} />
+                        </button>
+
+                        {idx > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => moverAlPrincipioExistentes(idx)}
+                            className="flex items-center gap-0.5 rounded bg-amber-400/90 hover:bg-amber-400 px-1.5 py-0.5 text-[9px] font-black text-black transition-colors"
+                            title="Poner como 1ª (Portada)"
+                          >
+                            <Star size={9} className="fill-black" /> 1ª
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => moverDerechaExistentes(idx)}
+                          disabled={idx >= form.imagenesExistentes.length - 1}
+                          className={`rounded p-1 text-xs transition-colors ${
+                            idx >= form.imagenesExistentes.length - 1
+                              ? "opacity-20 cursor-not-allowed text-chrome-600"
+                              : "text-white bg-carbon-800/80 hover:bg-electric-500 hover:text-black"
+                          }`}
+                          title="Mover hacia la derecha"
+                        >
+                          <ChevronRight size={13} />
+                        </button>
+                      </div>
                     </div>
                   ))}
 
@@ -804,24 +940,79 @@ export default function AdminResultados() {
                   {previewsGaleria.map((p, idx) => (
                     <div
                       key={`nueva-${idx}`}
-                      className="group relative h-20 rounded-lg overflow-hidden border border-electric-500/50 bg-carbon-950"
+                      className={`group relative h-28 sm:h-32 rounded-xl overflow-hidden border ${
+                        idx === 0 ? "border-amber-400 ring-2 ring-amber-400/30" : "border-electric-500/50"
+                      } bg-carbon-950 flex flex-col justify-between`}
                     >
                       <img
                         src={p.url}
                         alt={`Nueva ${idx + 1}`}
-                        className="h-full w-full object-cover"
+                        className="absolute inset-0 h-full w-full object-cover"
                       />
-                      <span className="absolute bottom-1 left-1 rounded bg-electric-500/80 px-1 py-0.2 text-[9px] font-bold text-black">
-                        Nueva
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => quitarArchivoGaleria(idx)}
-                        className="absolute top-1 right-1 rounded-md bg-black/80 p-1 text-white hover:bg-red-500 transition-colors"
-                        title="Quitar"
-                      >
-                        <X size={12} />
-                      </button>
+
+                      {/* Header de la tarjeta */}
+                      <div className="relative z-10 flex items-center justify-between p-1.5 bg-gradient-to-b from-black/85 via-black/40 to-transparent">
+                        {idx === 0 ? (
+                          <span className="flex items-center gap-1 rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-black text-black shadow">
+                            <Star size={10} className="fill-black" /> 1ª Portada
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-bold text-chrome-300 border border-carbon-700">
+                            {idx + 1}º
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => quitarArchivoGaleria(idx)}
+                          className="rounded-md bg-black/80 p-1 text-white hover:bg-red-500 transition-colors"
+                          title="Quitar foto"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+
+                      {/* Footer con controles de orden */}
+                      <div className="relative z-10 flex items-center justify-between gap-1 p-1 bg-gradient-to-t from-black/95 via-black/80 to-transparent">
+                        <button
+                          type="button"
+                          onClick={() => moverIzquierdaNuevas(idx)}
+                          disabled={idx === 0}
+                          className={`rounded p-1 text-xs transition-colors ${
+                            idx === 0
+                              ? "opacity-20 cursor-not-allowed text-chrome-600"
+                              : "text-white bg-carbon-800/80 hover:bg-electric-500 hover:text-black"
+                          }`}
+                          title="Mover hacia la izquierda"
+                        >
+                          <ChevronLeft size={13} />
+                        </button>
+
+                        {idx > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => moverAlPrincipioNuevas(idx)}
+                            className="flex items-center gap-0.5 rounded bg-amber-400/90 hover:bg-amber-400 px-1.5 py-0.5 text-[9px] font-black text-black transition-colors"
+                            title="Poner como 1ª (Portada)"
+                          >
+                            <Star size={9} className="fill-black" /> 1ª
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => moverDerechaNuevas(idx)}
+                          disabled={idx >= previewsGaleria.length - 1}
+                          className={`rounded p-1 text-xs transition-colors ${
+                            idx >= previewsGaleria.length - 1
+                              ? "opacity-20 cursor-not-allowed text-chrome-600"
+                              : "text-white bg-carbon-800/80 hover:bg-electric-500 hover:text-black"
+                          }`}
+                          title="Mover hacia la derecha"
+                        >
+                          <ChevronRight size={13} />
+                        </button>
+                      </div>
                     </div>
                   ))}
 
@@ -829,10 +1020,11 @@ export default function AdminResultados() {
                   <button
                     type="button"
                     onClick={() => inputGaleriaRef.current?.click()}
-                    className="flex h-20 flex-col items-center justify-center rounded-lg border border-dashed border-carbon-700 bg-carbon-900/50 text-chrome-400 hover:border-purple-400 hover:text-purple-300 transition-colors"
+                    className="flex h-28 sm:h-32 flex-col items-center justify-center rounded-xl border border-dashed border-carbon-700 bg-carbon-900/40 text-chrome-400 hover:border-purple-400 hover:text-purple-300 hover:bg-carbon-900 transition-colors"
                   >
-                    <Upload size={18} />
-                    <span className="mt-1 text-[11px] font-medium">+ Fotos</span>
+                    <Upload size={20} />
+                    <span className="mt-1.5 text-xs font-semibold">+ Agregar</span>
+                    <span className="text-[10px] text-chrome-500">fotos</span>
                   </button>
                 </div>
               </div>

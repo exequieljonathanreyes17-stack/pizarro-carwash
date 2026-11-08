@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { LockKeyhole } from "lucide-react";
+import { LockKeyhole, CheckCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 export default function Login() {
@@ -8,6 +8,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sesionExpirada = searchParams.get("expirado") === "true";
+  const cambioPassword = searchParams.get("cambioPassword") === "true";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -39,6 +40,13 @@ export default function Login() {
         {sesionExpirada && (
           <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-center text-xs text-yellow-300">
             Tu sesión ha expirado o el token no es válido. Por favor, ingresá nuevamente.
+          </div>
+        )}
+
+        {cambioPassword && (
+          <div className="mb-4 flex items-center gap-2.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs text-emerald-300">
+            <CheckCircle size={18} className="flex-none text-emerald-400" />
+            <span>Contraseña modificada correctamente. Por favor, iniciá sesión con tu nueva contraseña.</span>
           </div>
         )}
 
