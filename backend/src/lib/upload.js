@@ -1,6 +1,8 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+require("dotenv").config({ path: path.resolve(__dirname, "..", "..", ".env") });
+require("dotenv").config();
 const cloudinary = require("./cloudinary");
 
 const estaConfiguradoCloudinary = Boolean(
@@ -8,6 +10,12 @@ const estaConfiguradoCloudinary = Boolean(
   process.env.CLOUDINARY_API_KEY &&
   process.env.CLOUDINARY_API_SECRET
 );
+
+if (estaConfiguradoCloudinary) {
+  console.log(`[Upload] Cloudinary configurado y activo en cuenta: ${process.env.CLOUDINARY_CLOUD_NAME}`);
+} else {
+  console.warn("[Upload] ATENCIÓN: Credenciales de Cloudinary no encontradas, usando almacenamiento local.");
+}
 
 const uploadDir = path.join(__dirname, "..", "..", "uploads");
 if (!fs.existsSync(uploadDir)) {
