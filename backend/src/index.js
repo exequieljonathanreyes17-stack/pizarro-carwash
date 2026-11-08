@@ -17,6 +17,21 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+// Cabeceras HTTP de alto rendimiento y caché CDN Edge (Vercel / Cloudflare)
+app.use((req, res, next) => {
+  res.setHeader("Connection", "keep-alive");
+
+  // Peticiones públicas GET: el CDN de Vercel/Cloudflare las entrega en ~15ms
+  if (req.method === "GET" && !req.headers.authorization && !req.path.startsWith("/api/auth")) {
+    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+  } else {
+    // Peticiones del panel de administración o mutaciones: siempre datos en vivo
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  }
+  next();
+});
+
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 app.get("/api/health", (req, res) => res.json({ ok: true, servicio: "Pizarro Carwash API" }));
