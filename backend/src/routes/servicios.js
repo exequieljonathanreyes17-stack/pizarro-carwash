@@ -2,6 +2,7 @@ const express = require("express");
 const prisma = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
 const upload = require("../lib/upload");
+const cloudinary = require("../lib/cloudinary");
 const { obtenerUrlImagen } = upload;
 
 const router = express.Router();
@@ -107,6 +108,9 @@ router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
   const id = Number(req.params.id);
   const { nombre, descripcion, tipoVehiculo, precioDesde, icono, orden, activo, imagenUrl, masVendido, incluye, duracion } = req.body;
 
+  const servicioPrevio = await prisma.servicio.findUnique({ where: { id } });
+  if (!servicioPrevio) return res.status(404).json({ error: "Servicio no encontrado" });
+
   const data = {};
   if (nombre !== undefined) data.nombre = nombre;
   if (descripcion !== undefined) data.descripcion = descripcion;
@@ -123,6 +127,9 @@ router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
 
   try {
     const servicio = await prisma.servicio.update({ where: { id }, data });
+    if (data.imagenUrl && servicioPrevio.imagenUrl && servicioPrevio.imagenUrl !== data.imagenUrl) {
+      cloudinary.eliminarDeCloudinary(servicioPrevio.imagenUrl).catch(() => {});
+    }
     res.json(servicio);
   } catch (err) {
     res.status(404).json({ error: "Servicio no encontrado" });
@@ -131,7 +138,15 @@ router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
 
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
-    await prisma.servicio.delete({ where: { id: Number(req.params.id) } });
+    const id = Number(req.params.id);
+    const servicio = await prisma.servicio.findUnique({ where: { id } });
+    if (!servicio) return res.status(404).json({ error: "Servicio no encontrado" });
+
+    await prisma.servicio.delete({ where: { id } });
+
+    if (servicio.imagenUrl) {
+      cloudinary.eliminarDeCloudinary(servicio.imagenUrl).catch(() => {});
+    }
     res.json({ ok: true });
   } catch (err) {
     console.error("Error al eliminar servicio:", err);

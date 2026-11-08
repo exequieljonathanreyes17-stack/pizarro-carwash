@@ -2,6 +2,7 @@ const express = require("express");
 const prisma = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
 const upload = require("../lib/upload");
+const cloudinary = require("../lib/cloudinary");
 const { obtenerUrlImagen } = upload;
 
 const router = express.Router();
@@ -55,6 +56,9 @@ router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
   const id = Number(req.params.id);
   const { nombre, descripcion, precio, categoria, destacado, activo, imagenUrl } = req.body;
 
+  const productoPrevio = await prisma.producto.findUnique({ where: { id } });
+  if (!productoPrevio) return res.status(404).json({ error: "Producto no encontrado" });
+
   const data = {};
   if (nombre !== undefined) data.nombre = nombre;
   if (descripcion !== undefined) data.descripcion = descripcion;
@@ -67,6 +71,9 @@ router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
 
   try {
     const producto = await prisma.producto.update({ where: { id }, data });
+    if (data.imagenUrl && productoPrevio.imagenUrl && productoPrevio.imagenUrl !== data.imagenUrl) {
+      cloudinary.eliminarDeCloudinary(productoPrevio.imagenUrl).catch(() => {});
+    }
     res.json(producto);
   } catch (err) {
     res.status(404).json({ error: "Producto no encontrado" });
@@ -77,7 +84,13 @@ router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
 router.delete("/:id", requireAuth, async (req, res) => {
   const id = Number(req.params.id);
   try {
+    const producto = await prisma.producto.findUnique({ where: { id } });
+    if (!producto) return res.status(404).json({ error: "Producto no encontrado" });
+
     await prisma.producto.delete({ where: { id } });
+    if (producto.imagenUrl) {
+      cloudinary.eliminarDeCloudinary(producto.imagenUrl).catch(() => {});
+    }
     res.json({ ok: true });
   } catch (err) {
     console.error("Error al eliminar producto:", err);

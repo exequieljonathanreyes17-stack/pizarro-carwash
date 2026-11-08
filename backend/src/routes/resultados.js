@@ -2,6 +2,7 @@ const express = require("express");
 const prisma = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
 const upload = require("../lib/upload");
+const cloudinary = require("../lib/cloudinary");
 const { obtenerUrlImagen } = upload;
 
 const router = express.Router();
@@ -165,6 +166,11 @@ router.put(
   async (req, res) => {
     try {
       const id = Number(req.params.id);
+      const resultadoPrevio = await prisma.resultado.findUnique({ where: { id } });
+      if (!resultadoPrevio) {
+        return res.status(404).json({ error: "Resultado no encontrado" });
+      }
+
       const {
         titulo,
         descripcion,
@@ -178,6 +184,8 @@ router.put(
       } = req.body;
 
       const data = {};
+      const fotosABorrarDeCloudinary = [];
+
       if (titulo !== undefined) data.titulo = titulo;
       if (descripcion !== undefined) data.descripcion = descripcion;
       if (servicioId !== undefined) {
@@ -192,15 +200,27 @@ router.put(
       // Actualizar imagen antes si se sube archivo o se envía url
       if (req.files?.antes?.[0]) {
         data.imagenAntes = obtenerUrlImagen(req.files.antes[0]);
+        if (resultadoPrevio.imagenAntes && resultadoPrevio.imagenAntes !== data.imagenAntes) {
+          fotosABorrarDeCloudinary.push(resultadoPrevio.imagenAntes);
+        }
       } else if (imagenAntes !== undefined) {
         data.imagenAntes = imagenAntes || null;
+        if (resultadoPrevio.imagenAntes && resultadoPrevio.imagenAntes !== data.imagenAntes) {
+          fotosABorrarDeCloudinary.push(resultadoPrevio.imagenAntes);
+        }
       }
 
       // Actualizar imagen después si se sube archivo o se envía url
       if (req.files?.despues?.[0]) {
         data.imagenDespues = obtenerUrlImagen(req.files.despues[0]);
+        if (resultadoPrevio.imagenDespues && resultadoPrevio.imagenDespues !== data.imagenDespues) {
+          fotosABorrarDeCloudinary.push(resultadoPrevio.imagenDespues);
+        }
       } else if (imagenDespues !== undefined) {
         data.imagenDespues = imagenDespues || null;
+        if (resultadoPrevio.imagenDespues && resultadoPrevio.imagenDespues !== data.imagenDespues) {
+          fotosABorrarDeCloudinary.push(resultadoPrevio.imagenDespues);
+        }
       }
 
       // Galería múltiple: conservar existentes + agregar nuevas subidas
@@ -223,6 +243,20 @@ router.put(
 
       if (imagenesExistentes !== undefined || (req.files?.imagenes && req.files.imagenes.length > 0)) {
         data.imagenes = imagenesUrls.length > 0 ? JSON.stringify(imagenesUrls) : null;
+
+        // Detectar si se quitaron imágenes que estaban antes en la galería
+        if (resultadoPrevio.imagenes) {
+          try {
+            const parsedPrevias = JSON.parse(resultadoPrevio.imagenes);
+            if (Array.isArray(parsedPrevias)) {
+              for (const urlPrevia of parsedPrevias) {
+                if (!imagenesUrls.includes(urlPrevia)) {
+                  fotosABorrarDeCloudinary.push(urlPrevia);
+                }
+              }
+            }
+          } catch {}
+        }
       }
 
       const actualizado = await prisma.resultado.update({
@@ -234,6 +268,13 @@ router.put(
           },
         },
       });
+
+      // Eliminar de Cloudinary las fotos descartadas
+      if (fotosABorrarDeCloudinary.length > 0) {
+        cloudinary.eliminarMultiplesDeCloudinary(fotosABorrarDeCloudinary).catch((err) =>
+          console.error("[Cloudinary] Error eliminando imágenes reemplazadas:", err)
+        );
+      }
 
       res.json(normalizarResultado(actualizado));
     } catch (err) {
@@ -248,7 +289,32 @@ router.put(
 // DELETE /api/resultados/:id (protegido)
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
-    await prisma.resultado.delete({ where: { id: Number(req.params.id) } });
+    const id = Number(req.params.id);
+    const resultado = await prisma.resultado.findUnique({ where: { id } });
+    if (!resultado) {
+      return res.status(404).json({ error: "Resultado no encontrado" });
+    }
+
+    // Identificar todas las fotos asociadas para eliminarlas de Cloudinary
+    const fotosABorrar = [];
+    if (resultado.imagenAntes) fotosABorrar.push(resultado.imagenAntes);
+    if (resultado.imagenDespues) fotosABorrar.push(resultado.imagenDespues);
+    if (resultado.imagenes) {
+      try {
+        const parsed = JSON.parse(resultado.imagenes);
+        if (Array.isArray(parsed)) fotosABorrar.push(...parsed);
+      } catch {}
+    }
+
+    await prisma.resultado.delete({ where: { id } });
+
+    // Borrado definitivo de Cloudinary
+    if (fotosABorrar.length > 0) {
+      cloudinary.eliminarMultiplesDeCloudinary(fotosABorrar).catch((err) =>
+        console.error("[Cloudinary] Error eliminando fotos del resultado:", err)
+      );
+    }
+
     res.json({ ok: true });
   } catch (err) {
     console.error("Error al eliminar resultado:", err);
