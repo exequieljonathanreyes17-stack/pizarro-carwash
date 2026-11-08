@@ -3,6 +3,7 @@ const prisma = require("../lib/prisma");
 const { requireAuth } = require("../middleware/auth");
 const upload = require("../lib/upload");
 const { obtenerUrlImagen } = upload;
+const { eliminarDeCloudinary } = require("../lib/cloudinary");
 
 const router = express.Router();
 
@@ -49,8 +50,17 @@ router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
   if (descripcion !== undefined) data.descripcion = descripcion;
   if (orden !== undefined) data.orden = Number(orden);
   if (activo !== undefined) data.activo = activo === "true" || activo === true;
-  if (req.file) data.imagenUrl = obtenerUrlImagen(req.file);
-  else if (imagenUrl !== undefined) data.imagenUrl = imagenUrl;
+  if (req.file) {
+    data.imagenUrl = obtenerUrlImagen(req.file);
+    try {
+      const anterior = await prisma.certificacion.findUnique({ where: { id } });
+      if (anterior?.imagenUrl && anterior.imagenUrl !== data.imagenUrl) {
+        eliminarDeCloudinary(anterior.imagenUrl).catch(() => {});
+      }
+    } catch (e) {}
+  } else if (imagenUrl !== undefined) {
+    data.imagenUrl = imagenUrl;
+  }
 
   try {
     const certificacion = await prisma.certificacion.update({ where: { id }, data });
@@ -62,7 +72,12 @@ router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
 
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
-    await prisma.certificacion.delete({ where: { id: Number(req.params.id) } });
+    const id = Number(req.params.id);
+    const anterior = await prisma.certificacion.findUnique({ where: { id } });
+    if (anterior?.imagenUrl) {
+      await eliminarDeCloudinary(anterior.imagenUrl).catch(() => {});
+    }
+    await prisma.certificacion.delete({ where: { id } });
     res.json({ ok: true });
   } catch (err) {
     console.error("Error al eliminar certificación:", err);
