@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { uploadUrl } from "../lib/api";
 
 export default function ComparadorAntesDespues({
@@ -9,7 +9,35 @@ export default function ComparadorAntesDespues({
 }) {
   const [sliderPos, setSliderPos] = useState(50);
   const [arrastrando, setArrastrando] = useState(false);
+  const [cargadaAntes, setCargadaAntes] = useState(false);
+  const [cargadaDespues, setCargadaDespues] = useState(false);
+  const [errorAntes, setErrorAntes] = useState(false);
+  const [errorDespues, setErrorDespues] = useState(false);
+
   const containerRef = useRef(null);
+  const imgAntesRef = useRef(null);
+  const imgDespuesRef = useRef(null);
+
+  const urlAntes = uploadUrl(antes);
+  const urlDespues = uploadUrl(despues);
+
+  // Sincronización y comprobación de caché de navegador
+  useEffect(() => {
+    setCargadaAntes(false);
+    setCargadaDespues(false);
+    setErrorAntes(false);
+    setErrorDespues(false);
+
+    if (imgAntesRef.current?.complete && imgAntesRef.current?.naturalWidth > 0) {
+      setCargadaAntes(true);
+    }
+    if (imgDespuesRef.current?.complete && imgDespuesRef.current?.naturalWidth > 0) {
+      setCargadaDespues(true);
+    }
+  }, [urlAntes, urlDespues]);
+
+  const ambasCargadas =
+    (cargadaAntes || errorAntes) && (cargadaDespues || errorDespues);
 
   const calcularPosicion = useCallback((clientX) => {
     if (!containerRef.current) return;
@@ -20,6 +48,7 @@ export default function ComparadorAntesDespues({
   }, []);
 
   const handlePointerDown = (e) => {
+    if (!ambasCargadas) return;
     setArrastrando(true);
     calcularPosicion(e.clientX);
     try {
@@ -39,9 +68,6 @@ export default function ComparadorAntesDespues({
     } catch {}
   };
 
-  const urlAntes = uploadUrl(antes);
-  const urlDespues = uploadUrl(despues);
-
   if (!urlAntes && !urlDespues) return null;
 
   // Si solo hay una imagen disponible, mostrar esa directamente
@@ -58,7 +84,7 @@ export default function ComparadorAntesDespues({
           src={unica}
           alt={titulo}
           className="h-[380px] sm:h-[480px] w-full object-cover"
-          loading="lazy"
+          loading="eager"
           decoding="async"
         />
       </div>
@@ -79,44 +105,81 @@ export default function ComparadorAntesDespues({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="relative h-[360px] sm:h-[460px] md:h-[520px] w-full max-w-4xl select-none overflow-hidden rounded-2xl border border-carbon-800/80 bg-carbon-950 shadow-2xl cursor-ew-resize touch-none"
+        className={`relative h-[360px] sm:h-[460px] md:h-[520px] w-full max-w-4xl select-none overflow-hidden rounded-2xl border border-carbon-800/80 bg-carbon-950 shadow-2xl touch-none ${
+          ambasCargadas ? "cursor-ew-resize" : "cursor-default"
+        }`}
       >
+        {/* Placeholder / Spinner de carga sincronizada mientras se descargan ambas imágenes */}
+        {!ambasCargadas && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-carbon-950">
+            <div className="relative flex items-center justify-center">
+              <div className="absolute h-14 w-14 animate-ping rounded-full bg-electric-500/15" />
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-electric-500/20 border-t-electric-400" />
+            </div>
+            <p className="mt-4 text-xs font-semibold tracking-wider uppercase text-chrome-400 animate-pulse">
+              Cargando comparación...
+            </p>
+          </div>
+        )}
+
         {/* Imagen DESPUÉS (Fondo completo base de borde a borde) */}
         <img
+          ref={imgDespuesRef}
           src={urlDespues}
           alt="Después del trabajo"
-          className="absolute inset-0 h-full w-full object-cover pointer-events-none select-none"
+          onLoad={() => setCargadaDespues(true)}
+          onError={() => setErrorDespues(true)}
+          className={`absolute inset-0 h-full w-full object-cover pointer-events-none select-none transition-opacity duration-300 ${
+            ambasCargadas ? "opacity-100" : "opacity-0"
+          }`}
           draggable={false}
-          loading="lazy"
+          loading="eager"
+          fetchPriority="high"
           decoding="async"
         />
 
-        {/* Badge DESPUÉS (estilo fiel a la imagen de referencia) */}
-        <div className="pointer-events-none absolute top-3.5 right-3.5 z-20 rounded-md bg-black/60 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-md border border-white/10 shadow-md">
+        {/* Badge DESPUÉS */}
+        <div
+          className={`pointer-events-none absolute top-3.5 right-3.5 z-20 rounded-md bg-black/60 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-md border border-white/10 shadow-md transition-opacity duration-300 ${
+            ambasCargadas ? "opacity-100" : "opacity-0"
+          }`}
+        >
           DESPUÉS
         </div>
 
         {/* Imagen ANTES (Misma posición exacta y tamaño con clip-path nítido) */}
         <img
+          ref={imgAntesRef}
           src={urlAntes}
           alt="Antes del trabajo"
-          className="absolute inset-0 h-full w-full object-cover pointer-events-none select-none"
+          onLoad={() => setCargadaAntes(true)}
+          onError={() => setErrorAntes(true)}
+          className={`absolute inset-0 h-full w-full object-cover pointer-events-none select-none transition-opacity duration-300 ${
+            ambasCargadas ? "opacity-100" : "opacity-0"
+          }`}
           style={{
             clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`,
           }}
           draggable={false}
-          loading="lazy"
+          loading="eager"
+          fetchPriority="high"
           decoding="async"
         />
 
         {/* Badge ANTES */}
-        <div className="pointer-events-none absolute top-3.5 left-3.5 z-20 rounded-md bg-black/60 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-md border border-white/10 shadow-md">
+        <div
+          className={`pointer-events-none absolute top-3.5 left-3.5 z-20 rounded-md bg-black/60 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-md border border-white/10 shadow-md transition-opacity duration-300 ${
+            ambasCargadas ? "opacity-100" : "opacity-0"
+          }`}
+        >
           ANTES
         </div>
 
-        {/* Línea divisoria central con flechas gemelas ◄ ► (como en la segunda imagen) */}
+        {/* Línea divisoria central con flechas gemelas ◄ ► */}
         <div
-          className="absolute top-0 bottom-0 z-30 flex items-center justify-center -translate-x-1/2 pointer-events-none"
+          className={`absolute top-0 bottom-0 z-30 flex items-center justify-center -translate-x-1/2 pointer-events-none transition-opacity duration-300 ${
+            ambasCargadas ? "opacity-100" : "opacity-0"
+          }`}
           style={{ left: `${sliderPos}%` }}
         >
           {/* Línea divisoria blanca */}

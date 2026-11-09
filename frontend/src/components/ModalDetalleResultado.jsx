@@ -12,6 +12,7 @@ import ComparadorAntesDespues from "./ComparadorAntesDespues.jsx";
 import GaleriaResultado from "./GaleriaResultado.jsx";
 import { linkWhatsApp } from "../lib/whatsapp";
 import IconoWhatsApp from "./IconoWhatsApp.jsx";
+import { uploadUrl } from "../lib/api";
 
 export default function ModalDetalleResultado({ resultado, onClose }) {
   if (!resultado) return null;
@@ -22,6 +23,20 @@ export default function ModalDetalleResultado({ resultado, onClose }) {
 
   // Si tiene ambos modos, permitir alternar con pestañas. Inicializa en el que esté disponible.
   const [tabActivo, setTabActivo] = useState(tieneAntesDespues ? "comparador" : "galeria");
+
+  // Pre-cargar de forma inmediata y en alta prioridad las imágenes de comparación
+  useEffect(() => {
+    if (resultado.imagenAntes) {
+      const img1 = new Image();
+      if ("fetchPriority" in img1) img1.fetchPriority = "high";
+      img1.src = uploadUrl(resultado.imagenAntes);
+    }
+    if (resultado.imagenDespues) {
+      const img2 = new Image();
+      if ("fetchPriority" in img2) img2.fetchPriority = "high";
+      img2.src = uploadUrl(resultado.imagenDespues);
+    }
+  }, [resultado.imagenAntes, resultado.imagenDespues]);
 
   // Cerrar con Escape
   useEffect(() => {

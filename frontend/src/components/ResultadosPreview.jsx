@@ -64,6 +64,16 @@ export default function ResultadosPreview() {
                   <div
                     key={r.id}
                     onClick={() => setResultadoSeleccionado(r)}
+                    onPointerEnter={() => {
+                      if (r.imagenAntes) {
+                        const img = new Image();
+                        img.src = uploadUrl(r.imagenAntes);
+                      }
+                      if (r.imagenDespues) {
+                        const img = new Image();
+                        img.src = uploadUrl(r.imagenDespues);
+                      }
+                    }}
                     className="glass-card group flex flex-col justify-between overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 hover:border-electric-400/60 hover:shadow-neon hover:-translate-y-1"
                   >
                     {/* Contenedor de la Portada */}
