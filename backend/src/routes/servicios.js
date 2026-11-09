@@ -126,11 +126,15 @@ router.put("/:id", requireAuth, upload.single("imagen"), async (req, res) => {
   else if (imagenUrl !== undefined) data.imagenUrl = imagenUrl;
 
   try {
-    const servicio = await prisma.servicio.update({ where: { id }, data });
+    const servicio = await prisma.servicio.update({
+      where: { id },
+      data,
+      include: { resenas: { where: { aprobada: true }, select: { calificacion: true } } },
+    });
     if (data.imagenUrl && servicioPrevio.imagenUrl && servicioPrevio.imagenUrl !== data.imagenUrl) {
       cloudinary.eliminarDeCloudinary(servicioPrevio.imagenUrl).catch(() => {});
     }
-    res.json(servicio);
+    res.json(conPromedio(servicio));
   } catch (err) {
     res.status(404).json({ error: "Servicio no encontrado" });
   }
