@@ -33,7 +33,7 @@ export default function AdminProductos() {
 
   function cargar() {
     if (!cache.get("/productos")) setCargando(true);
-    api.get("/productos?todos=true")
+    api.get("/productos?todos=true", true)
       .then((data) => {
         setProductos(data);
         cache.set("/productos", data);
@@ -99,11 +99,22 @@ export default function AdminProductos() {
     }
 
     try {
+      let resActualizado = null;
       if (editandoId) {
-        await api.put(`/productos/${editandoId}`, data, { isForm: true, auth: true });
+        resActualizado = await api.put(`/productos/${editandoId}`, data, { isForm: true, auth: true });
       } else {
-        await api.post("/productos", data, { isForm: true, auth: true });
+        resActualizado = await api.post("/productos", data, { isForm: true, auth: true });
       }
+
+      if (editandoId && resActualizado) {
+        setProductos((prev) =>
+          prev.map((p) => (p.id === editandoId ? { ...p, ...resActualizado } : p))
+        );
+      } else if (resActualizado) {
+        setProductos((prev) => [resActualizado, ...prev]);
+      }
+
+      cache.clear();
       setMostrarForm(false);
       cargar();
     } catch (err) {

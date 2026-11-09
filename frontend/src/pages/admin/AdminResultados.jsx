@@ -134,12 +134,12 @@ export default function AdminResultados() {
     setMostrarForm(true);
   }
 
-  // Manejo de cambio de servicio para autocompletar título si está vacío
+  // Manejo de cambio de servicio para actualizar automáticamente el título del trabajo
   function handleServicioChange(e) {
     const sId = e.target.value;
     setForm((prev) => {
       const nuevo = { ...prev, servicioId: sId };
-      if (!prev.titulo.trim() && sId) {
+      if (sId) {
         const serv = servicios.find((s) => String(s.id) === String(sId));
         if (serv) {
           nuevo.titulo = serv.nombre;

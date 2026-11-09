@@ -7,9 +7,16 @@ function getToken() {
 async function request(path, { method = "GET", body, isForm = false, auth = false } = {}) {
   const headers = {};
   if (!isForm) headers["Content-Type"] = "application/json";
-  if (auth) {
-    const token = getToken();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const token = getToken();
+  if ((auth || path.includes("todos=true")) && token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  // Para peticiones de administración o con auth, forzar que el navegador no lea desde caché
+  if (auth || path.includes("todos=true")) {
+    headers["Cache-Control"] = "no-cache";
+    headers["Pragma"] = "no-cache";
   }
 
   let res;

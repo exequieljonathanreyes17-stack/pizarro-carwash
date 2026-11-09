@@ -1,23 +1,15 @@
 
 import { Link } from "react-router-dom";
-import { Droplets, Sparkles, CarFront, Sofa, Star, Lightbulb, Wrench, ChevronRight } from "lucide-react";
+import { Sparkles, ChevronRight } from "lucide-react";
 import { slugify } from "../lib/slug";
 import { linkWhatsApp, mensajeConsultaServicio } from "../lib/whatsapp";
 import { uploadUrl } from "../lib/api";
+import { obtenerComponenteIcono } from "../lib/iconosServicios";
 import Estrellas from "./Estrellas.jsx";
 import IconoWhatsApp from "./IconoWhatsApp.jsx";
 
-const ICONOS = {
-  droplets: Droplets,
-  sparkles: Sparkles,
-  "car-front": CarFront,
-  sofa: Sofa,
-  star: Star,
-  lightbulb: Lightbulb,
-};
-
 export default function TarjetaServicio({ servicio }) {
-  const Icono = ICONOS[servicio.icono] || Wrench;
+  const Icono = obtenerComponenteIcono(servicio.icono);
   const slug = slugify(servicio.nombre);
 
   return (

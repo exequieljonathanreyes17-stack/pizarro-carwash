@@ -31,7 +31,7 @@ export default function AdminCertificaciones() {
 
   function cargar() {
     if (!cache.get("/certificaciones")) setCargando(true);
-    api.get("/certificaciones?todos=true")
+    api.get("/certificaciones?todos=true", true)
       .then((data) => {
         setCertificaciones(data);
         cache.set("/certificaciones", data);
@@ -100,11 +100,22 @@ export default function AdminCertificaciones() {
     }
 
     try {
+      let resActualizado = null;
       if (editandoId) {
-        await api.put(`/certificaciones/${editandoId}`, data, { isForm: true, auth: true });
+        resActualizado = await api.put(`/certificaciones/${editandoId}`, data, { isForm: true, auth: true });
       } else {
-        await api.post("/certificaciones", data, { isForm: true, auth: true });
+        resActualizado = await api.post("/certificaciones", data, { isForm: true, auth: true });
       }
+
+      if (editandoId && resActualizado) {
+        setCertificaciones((prev) =>
+          prev.map((c) => (c.id === editandoId ? { ...c, ...resActualizado } : c))
+        );
+      } else if (resActualizado) {
+        setCertificaciones((prev) => [resActualizado, ...prev]);
+      }
+
+      cache.clear();
       setMostrarForm(false);
       setForm(VACIO);
       setImagen(null);

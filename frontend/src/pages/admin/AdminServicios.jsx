@@ -1,12 +1,30 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, X, Clock, Sparkles, Check, Wrench } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  X,
+  Clock,
+  Sparkles,
+  Check,
+  Wrench,
+} from "lucide-react";
 import { api, cache, uploadUrl } from "../../lib/api";
 import { optimizarImagenParaWeb } from "../../lib/imageOptimizer";
 import { SkeletonServicios } from "../../components/admin/AdminSkeletons.jsx";
 import Paginacion from "../../components/admin/Paginacion.jsx";
 import ModalConfirmar from "../../components/admin/ModalConfirmar.jsx";
+import {
+  OPCIONES_ICONOS_SERVICIOS,
+  obtenerComponenteIcono,
+} from "../../lib/iconosServicios";
 
 const ITEMS_POR_PAGINA = 6;
+
+function renderIconoServicio(nombreIcono, size = 26) {
+  const Componente = obtenerComponenteIcono(nombreIcono);
+  return <Componente size={size} />;
+}
 
 const VACIO = {
   nombre: "",
@@ -22,7 +40,6 @@ const VACIO = {
   imagenUrl: "",
 };
 
-const ICONOS_DISPONIBLES = ["droplets", "sparkles", "car-front", "sofa", "star", "lightbulb"];
 
 export default function AdminServicios() {
   const [servicios, setServicios] = useState(() => cache.get("/servicios") || []);
@@ -47,7 +64,7 @@ export default function AdminServicios() {
 
   function cargar() {
     if (!cache.get("/servicios")) setCargando(true);
-    api.get("/servicios?todos=true")
+    api.get("/servicios?todos=true", true)
       .then((data) => {
         setServicios(data);
         cache.set("/servicios", data);
@@ -121,11 +138,23 @@ export default function AdminServicios() {
     }
 
     try {
+      let resActualizado = null;
       if (editandoId) {
-        await api.put(`/servicios/${editandoId}`, data, { isForm: true, auth: true });
+        resActualizado = await api.put(`/servicios/${editandoId}`, data, { isForm: true, auth: true });
       } else {
-        await api.post("/servicios", data, { isForm: true, auth: true });
+        resActualizado = await api.post("/servicios", data, { isForm: true, auth: true });
       }
+
+      // 1. Reflejo inmediato en el estado local (0 ms de espera)
+      if (editandoId && resActualizado) {
+        setServicios((prev) =>
+          prev.map((s) => (s.id === editandoId ? { ...s, ...resActualizado } : s))
+        );
+      } else if (resActualizado) {
+        setServicios((prev) => [resActualizado, ...prev]);
+      }
+
+      cache.clear();
       setMostrarForm(false);
       cargar();
     } catch (err) {
@@ -174,8 +203,8 @@ export default function AdminServicios() {
                             />
                           </>
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center text-electric-400/80">
-                            <Wrench size={26} />
+                          <div className="flex h-full w-full items-center justify-center text-electric-400">
+                            {renderIconoServicio(s.icono, 28)}
                           </div>
                         )}
                       </div>
@@ -375,9 +404,9 @@ export default function AdminServicios() {
                     value={form.icono}
                     onChange={(e) => setForm({ ...form, icono: e.target.value })}
                   >
-                    {ICONOS_DISPONIBLES.map((i) => (
-                      <option key={i} value={i}>
-                        {i}
+                    {OPCIONES_ICONOS_SERVICIOS.map((opt) => (
+                      <option key={opt.valor} value={opt.valor}>
+                        {opt.label}
                       </option>
                     ))}
                   </select>
